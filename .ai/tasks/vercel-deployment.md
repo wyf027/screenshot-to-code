@@ -8,7 +8,7 @@ keys outside the browser.
 
 ## Current State
 
-- Status: design documented; awaiting written-spec review.
+- Status: written spec approved; implementation plan drafted; execution pending.
 - Branch: `feat/vercel-deployment`.
 - Worktree: `.worktrees/vercel-deployment`.
 - Upstream base: `d026163f586dfa8c5c10d28c36edd59a9d3b0e88`.
@@ -42,7 +42,11 @@ keys outside the browser.
 - If Vercel Services is unavailable, stop and request approval before using the
   two-project fallback.
 
+## Implementation Plan
+
+`docs/superpowers/plans/2026-08-31-vercel-deployment.md`
+
 ## Next Action
 
-Commit the design/task state, push the feature branch, and ask the user to
-review the written spec before creating the implementation plan.
+Commit and push the implementation plan, then obtain the user's execution-mode
+choice before editing runtime code.
