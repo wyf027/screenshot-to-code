@@ -60,6 +60,7 @@ export function generateCode(
 
   const ws = new WebSocket(wsUrl);
   wsRef.current = ws;
+  let serverErrorMessage: string | null = null;
 
   ws.addEventListener("open", () => {
     ws.send(JSON.stringify(params));
@@ -90,8 +91,9 @@ export function generateCode(
     } else if (response.type === "toolResult") {
       callbacks.onToolResult(response.data, response.variantIndex, response.eventId);
     } else if (response.type === "error") {
-      console.error("Error generating code", response.value);
-      toast.error(response.value || ERROR_MESSAGE);
+      serverErrorMessage = response.value || ERROR_MESSAGE;
+      console.error("Error generating code", serverErrorMessage);
+      toast.error(serverErrorMessage);
     }
   });
 
@@ -102,7 +104,10 @@ export function generateCode(
       callbacks.onCancel("user_cancelled");
     } else if (event.code === APP_ERROR_WEB_SOCKET_CODE) {
       console.error("Known server error", event);
-      callbacks.onCancel("request_failed", event.reason || ERROR_MESSAGE);
+      callbacks.onCancel(
+        "request_failed",
+        event.reason || serverErrorMessage || ERROR_MESSAGE
+      );
     } else if (event.code !== 1000) {
       console.error("Unknown server or connection error", event);
       toast.error(ERROR_MESSAGE);
