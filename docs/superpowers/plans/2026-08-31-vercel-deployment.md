@@ -758,7 +758,7 @@ through production-style lifespan entry and exit.
 - Consumes: the locally verified feature branch.
 - Produces: reviewed commits merged into the public fork's `main` branch.
 
-- [ ] **Step 1: Run the final diff checks**
+- [x] **Step 1: Run the final diff checks**
 
 ```bash
 git status --short --branch
@@ -768,7 +768,7 @@ git diff --stat origin/main...HEAD
 
 Expected: the worktree is clean and only planned files differ.
 
-- [ ] **Step 2: Invoke independent code review**
+- [x] **Step 2: Invoke independent code review**
 
 Use `superpowers:requesting-code-review`. Review against
 `docs/superpowers/specs/2026-08-31-vercel-deployment-design.md` and resolve all
