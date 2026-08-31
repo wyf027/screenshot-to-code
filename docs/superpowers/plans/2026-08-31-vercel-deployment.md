@@ -519,7 +519,7 @@ git diff --check
 Expected: configuration tests pass, both JSON files parse, and the diff has no
 whitespace errors.
 
-- [ ] **Step 6: Commit the Vercel topology**
+- [x] **Step 6: Commit the Vercel topology**
 
 ```bash
 git add vercel.json frontend/vercel.json backend/tests/test_vercel_config.py
@@ -538,7 +538,7 @@ git commit -m "feat: configure Vercel services"
 - Consumes: the implementation and environment names from Tasks 1-3.
 - Produces: a reproducible public deployment guide and an auditable task state.
 
-- [ ] **Step 1: Add a Vercel deployment section to the README**
+- [x] **Step 1: Add a Vercel deployment section to the README**
 
 Document all of the following verbatim environment assignments, while stating
 that none is a provider credential:
@@ -562,13 +562,13 @@ The section must also state:
   added, while core code generation remains available;
 - local development continues to use empty prefixes.
 
-- [ ] **Step 2: Update the task card**
+- [x] **Step 2: Update the task card**
 
 Set `.ai/tasks/vercel-deployment.md` status to `implementation locally
 verified` only after Task 5 finishes. Until then, set it to `implementation in
 progress` and list the latest commit after each task.
 
-- [ ] **Step 3: Validate documentation and secret hygiene**
+- [x] **Step 3: Validate documentation and secret hygiene**
 
 ```bash
 rg -n "BACKEND_PATH_PREFIX|VITE_BACKEND_PATH_PREFIX|browser BYOK|300 seconds" README.md

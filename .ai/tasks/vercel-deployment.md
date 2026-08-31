@@ -8,7 +8,8 @@ keys outside the browser.
 
 ## Current State
 
-- Status: revised `/backend` mount design approved; implementation in progress.
+- Status: backend mount, frontend URL, and Vercel topology implemented; local
+  integrated verification in progress.
 - Branch: `feat/vercel-deployment`.
 - Worktree: `.worktrees/vercel-deployment`.
 - Upstream base: `d026163f586dfa8c5c10d28c36edd59a9d3b0e88`.
@@ -49,6 +50,12 @@ keys outside the browser.
 ## Implementation Plan
 
 `docs/superpowers/plans/2026-08-31-vercel-deployment.md`
+
+## Implementation Commits
+
+- `3de0f2a` - mount the existing FastAPI application under `/backend`.
+- `ee3f4f8` - build same-origin frontend URLs with `/backend`.
+- `2faa000` - define Vercel Services and Vite SPA configuration.
 
 ## Next Action
 
