@@ -265,7 +265,7 @@ uvx --from poetry poetry run pyright config.py main.py routes/generate_code.py u
 Expected: 276 existing tests plus the new tests pass; changed files have zero
 Pyright errors and no new warnings.
 
-- [ ] **Step 9: Commit the backend compatibility change**
+- [x] **Step 9: Commit the backend compatibility change**
 
 ```bash
 git add backend/config.py backend/main.py backend/routes/generate_code.py backend/uploaded_assets/store.py backend/tests/test_backend_path_prefix.py
@@ -285,7 +285,7 @@ git commit -m "feat: mount backend under deployment prefix"
 - Consumes: `window.location.origin`, `VITE_HTTP_BACKEND_URL`, `VITE_WS_BACKEND_URL`, and `VITE_BACKEND_PATH_PREFIX`.
 - Produces: `normalizeBackendPathPrefix(value?: string) -> string` and `buildBackendUrls(origin: string, rawPrefix?: string) -> { http: string; ws: string }`.
 
-- [ ] **Step 1: Write the failing URL-builder tests**
+- [x] **Step 1: Write the failing URL-builder tests**
 
 Create `frontend/src/lib/backend-urls.test.ts`:
 
@@ -322,7 +322,7 @@ describe("backend URL construction", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [x] **Step 2: Run the test and verify RED**
 
 ```bash
 cd frontend
@@ -331,7 +331,7 @@ pnpm test --runInBand src/lib/backend-urls.test.ts
 
 Expected: FAIL because `backend-urls.ts` does not exist.
 
-- [ ] **Step 3: Implement the pure URL helper**
+- [x] **Step 3: Implement the pure URL helper**
 
 Create `frontend/src/lib/backend-urls.ts`:
 
@@ -349,7 +349,7 @@ export function buildBackendUrls(origin: string, rawPrefix?: string) {
 }
 ```
 
-- [ ] **Step 4: Use the helper from the runtime config**
+- [x] **Step 4: Use the helper from the runtime config**
 
 Update `frontend/src/config.ts`:
 
@@ -374,7 +374,7 @@ export const HTTP_BACKEND_URL =
 
 Keep `IS_RUNNING_ON_CLOUD` and `PICO_BACKEND_FORM_SECRET` unchanged.
 
-- [ ] **Step 5: Run targeted tests and lint**
+- [x] **Step 5: Run targeted tests and lint**
 
 ```bash
 cd frontend
@@ -384,7 +384,7 @@ pnpm exec eslint src/config.ts src/lib/backend-urls.ts src/lib/backend-urls.test
 
 Expected: the new tests pass and the three changed files have no lint findings.
 
-- [ ] **Step 6: Run frontend regression tests and build**
+- [x] **Step 6: Run frontend regression tests and build**
 
 ```bash
 cd frontend
