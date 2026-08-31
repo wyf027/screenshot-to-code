@@ -189,6 +189,7 @@ def canonical_tool_definitions(
     image_generation_enabled: bool = True,
     image_editing_enabled: bool = True,
     asset_extraction_enabled: bool = True,
+    asset_persistence_enabled: bool = True,
     screenshot_enabled: bool = True,
 ) -> List[CanonicalToolDefinition]:
     tools: List[CanonicalToolDefinition] = [
@@ -247,7 +248,7 @@ def canonical_tool_definitions(
                 parameters=_edit_images_schema(),
             )
         )
-    if asset_extraction_enabled:
+    if asset_extraction_enabled and asset_persistence_enabled:
         tools.append(
             CanonicalToolDefinition(
                 name="extract_assets",
@@ -280,17 +281,16 @@ def canonical_tool_definitions(
                 parameters=_screenshot_preview_schema(),
             )
         )
-    tools.extend(
-        [
-            SAVE_ASSETS_TOOL_DEFINITION,
-            CanonicalToolDefinition(
-                name="retrieve_option",
-                description=(
-                    "Retrieve the full HTML for a specific option (variant) so you can "
-                    "reference it."
-                ),
-                parameters=_retrieve_option_schema(),
+    if asset_persistence_enabled:
+        tools.append(SAVE_ASSETS_TOOL_DEFINITION)
+    tools.append(
+        CanonicalToolDefinition(
+            name="retrieve_option",
+            description=(
+                "Retrieve the full HTML for a specific option (variant) so you can "
+                "reference it."
             ),
-        ]
+            parameters=_retrieve_option_schema(),
+        )
     )
     return tools

@@ -29,6 +29,8 @@ WebSocket and must not persist or expose provider credentials.
 - Do not bundle or require a Chromium browser in the first Vercel deployment.
   The existing capability probe will omit screenshot preview when Chromium is
   unavailable.
+- Disable local `save_assets` and `extract_assets` tools on Vercel until a
+  durable object store replaces the ephemeral Function filesystem.
 - Preserve local routes and local startup commands by mounting the complete
   backend ASGI application under an opt-in production prefix.
 
@@ -72,8 +74,8 @@ domain.
 5. Vercel routes the connection to the FastAPI service. The connection remains
    pinned to that Function instance for the generation.
 6. The backend sends model output and status messages over the same socket.
-7. Generated code remains in browser application state. Temporary extracted
-   assets and optional logs exist only in the Function's temporary filesystem.
+7. Generated code remains in browser application state. Local asset tools are
+   disabled; optional logs exist only in the Function's temporary filesystem.
 
 No provider key is written to Git, Vercel project configuration, task cards,
 logs, screenshots, or documentation.
@@ -85,6 +87,8 @@ Vercel Functions have an ephemeral filesystem. Production configuration uses:
 - `LOCAL_ASSET_DIR=/tmp/screenshot-to-code/local-assets`
 - `LOGS_PATH=/tmp/screenshot-to-code`
 - `PROMPT_REPORTS_ENABLED=false`
+- `IS_PROD=true`
+- `LOCAL_ASSET_TOOLS_ENABLED=false`
 
 The application must create these directories lazily and must not depend on
 their contents surviving a cold start or a later request.
@@ -114,8 +118,9 @@ turn safely.
   the UI retryable.
 - Missing Chromium: report screenshot preview as unavailable and continue with
   core screenshot-to-code generation.
-- Temporary asset loss after an instance recycle: fail the affected operation
-  explicitly; do not pretend that an asset remains available.
+- Local asset tools disabled: do not stage uploaded assets or advertise
+  `save_assets`/`extract_assets`; continue passing screenshots to the selected
+  vision model.
 
 ## Expected Code and Configuration Changes
 
@@ -126,8 +131,13 @@ turn safely.
   FastAPI application under the configured prefix.
 - `backend/uploaded_assets/store.py`: include the configured prefix in public
   local-asset base URLs.
-- `backend/routes/generate_code.py`: pass the configured prefix into local
-  asset URL inference.
+- `backend/routes/generate_code.py`: derive the configured prefix from ASGI
+  `root_path` and disable local asset staging when configured off.
+- `backend/agent/tools/definitions.py` and
+  `backend/agent/providers/factory.py`: omit local asset tools when the runtime
+  disables ephemeral asset persistence.
+- `backend/.python-version` and `backend/requirements.txt`: pin Vercel Python
+  3.12 and expose locked dependencies to the Vercel Python builder.
 - `frontend/src/config.ts`: apply the optional path prefix to same-origin HTTP
   and WebSocket base URLs.
 - Backend and frontend tests: prove empty-prefix compatibility and `/backend`

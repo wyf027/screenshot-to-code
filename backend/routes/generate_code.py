@@ -11,10 +11,10 @@ from starlette.websockets import WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK, ConnectionClosedError
 from config import (
     ANTHROPIC_API_KEY,
-    BACKEND_PATH_PREFIX,
     GEMINI_API_KEY,
     IS_DEBUG_ENABLED,
     IS_PROD,
+    LOCAL_ASSET_TOOLS_ENABLED,
     NUM_VARIANTS,
     NUM_VARIANTS_VIDEO,
     OPENAI_API_KEY,
@@ -327,7 +327,10 @@ class ParameterExtractionStage:
 
         # Feature preferences default to enabled for older clients.
         should_generate_images = bool(params.get("isImageGenerationEnabled", True))
-        should_extract_assets = bool(params.get("isAssetExtractionEnabled", True))
+        should_extract_assets = (
+            LOCAL_ASSET_TOOLS_ENABLED
+            and bool(params.get("isAssetExtractionEnabled", True))
+        )
 
         # Extract and validate generation type
         generation_type = params.get("generationType", "create")
@@ -344,8 +347,11 @@ class ParameterExtractionStage:
             params.get("history")
         )
 
-        prompt = append_uploaded_asset_ids_to_prompt(prompt, self.asset_base_url)
-        history = append_uploaded_asset_ids_to_history(history, self.asset_base_url)
+        if LOCAL_ASSET_TOOLS_ENABLED:
+            prompt = append_uploaded_asset_ids_to_prompt(prompt, self.asset_base_url)
+            history = append_uploaded_asset_ids_to_history(
+                history, self.asset_base_url
+            )
 
         # Extract file state for agent edits
         raw_file_state = params.get("fileState")
@@ -747,7 +753,7 @@ class ParameterExtractionMiddleware(Middleware):
         # Extract and validate
         param_extractor = ParameterExtractionStage(
             context.throw_error,
-            infer_local_asset_base_url(context.websocket, BACKEND_PATH_PREFIX),
+            infer_local_asset_base_url(context.websocket),
         )
         context.extracted_params = await param_extractor.extract_and_validate(
             context.params

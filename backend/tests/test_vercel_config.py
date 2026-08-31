@@ -35,3 +35,12 @@ def test_frontend_service_has_spa_fallback() -> None:
     assert config["rewrites"] == [
         {"source": "/(.*)", "destination": "/index.html"}
     ]
+
+
+def test_backend_service_declares_vercel_python_runtime_dependencies() -> None:
+    backend = ROOT / "backend"
+    python_version = (backend / ".python-version").read_text(encoding="utf-8")
+    assert python_version.strip() == "3.12"
+    requirements = (backend / "requirements.txt").read_text(encoding="utf-8")
+    for package in ("fastapi==", "openai==", "playwright==", "websockets=="):
+        assert package in requirements

@@ -112,6 +112,8 @@ non-secret environment variables to both Production and Preview:
 ```dotenv
 BACKEND_PATH_PREFIX=/backend
 VITE_BACKEND_PATH_PREFIX=/backend
+IS_PROD=true
+LOCAL_ASSET_TOOLS_ENABLED=false
 LOCAL_ASSET_DIR=/tmp/screenshot-to-code/local-assets
 LOGS_PATH=/tmp/screenshot-to-code
 PROMPT_REPORTS_ENABLED=false
@@ -127,6 +129,17 @@ The backend keeps its existing internal routes and is mounted under
 Provider credentials use browser BYOK for this deployment. Enter an OpenAI,
 Anthropic, or Gemini key in the application's Settings dialog. Do not add
 provider keys to the Vercel project or commit them to Git.
+
+`IS_PROD=true` disables custom OpenAI Base URLs in the public deployment.
+`LOCAL_ASSET_TOOLS_ENABLED=false` disables `save_assets` and `extract_assets`
+because Vercel `/tmp` storage is ephemeral and cannot provide durable public
+asset URLs across Function instances. Screenshot input and core code generation
+remain available; durable asset extraction can be added later with object
+storage.
+
+The backend service pins Python 3.12 in `backend/.python-version`. Its
+`backend/requirements.txt` is exported from Poetry so Vercel's Python builder
+installs the same locked runtime dependencies.
 
 Vercel Hobby Functions can keep a generation connection open for at most 300
 seconds. The first deployment does not bundle Chromium, so the optional

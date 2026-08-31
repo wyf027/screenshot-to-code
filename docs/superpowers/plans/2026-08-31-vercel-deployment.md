@@ -17,6 +17,7 @@
 - Local startup retains its mixed existing routes; `/backend` is an opt-in ASGI mount through environment configuration.
 - Vercel Hobby maximum duration is 300 seconds.
 - The first Vercel deployment does not bundle Chromium; missing Chromium disables only screenshot preview.
+- The first Vercel deployment sets `LOCAL_ASSET_TOOLS_ENABLED=false`; screenshots still reach vision models, but ephemeral `save_assets` and `extract_assets` are omitted.
 - Existing multi-provider selection and four-variant image generation remain unchanged.
 - Do not repair unrelated upstream lint or Pyright findings.
 - If the Vercel account does not expose Services or Python WebSockets, stop before changing to the two-project fallback.
@@ -134,11 +135,12 @@ def test_asset_base_url_includes_the_backend_prefix() -> None:
                 "x-forwarded-host": "example.vercel.app",
                 "x-forwarded-proto": "https",
             },
+            scope={"root_path": "/backend"},
             url=SimpleNamespace(scheme="wss", netloc="example.vercel.app"),
         ),
     )
     assert (
-        infer_local_asset_base_url(websocket, "/backend")
+        infer_local_asset_base_url(websocket)
         == "https://example.vercel.app/backend"
     )
 ```
@@ -171,10 +173,11 @@ BACKEND_PATH_PREFIX = normalize_path_prefix(os.environ.get("BACKEND_PATH_PREFIX"
 
 - [x] **Step 5: Make generated asset URLs prefix-aware**
 
-Update `infer_local_asset_base_url` in `backend/uploaded_assets/store.py` to accept
-`path_prefix: str = ""` and return `f"{scheme}://{host}{path_prefix}"`. This
-keeps local URLs unchanged and makes generated asset URLs point at
-`/backend/local-assets` on Vercel.
+Update `infer_local_asset_base_url` in `backend/uploaded_assets/store.py` to
+read the effective prefix from `websocket.scope["root_path"]` when no explicit
+override is supplied. This keeps local URLs unchanged, makes mounted asset URLs
+point at `/backend/local-assets`, and prevents the app factory from diverging
+from a module-level constant.
 
 - [x] **Step 6: Add an application factory**
 
@@ -231,13 +234,13 @@ decorator-bound global app construction. Do not add a prefix to any individual
 router: the sub-application mount must preserve existing internal paths such as
 `/generate-code` and `/api/capabilities`.
 
-In `backend/routes/generate_code.py`, import `BACKEND_PATH_PREFIX` from
-`config` and pass it to the asset URL inference call:
+In `backend/routes/generate_code.py`, keep the call independent of configuration
+constants so the mounted ASGI scope is authoritative:
 
 ```python
 param_extractor = ParameterExtractionStage(
     context.throw_error,
-    infer_local_asset_base_url(context.websocket, BACKEND_PATH_PREFIX),
+    infer_local_asset_base_url(context.websocket),
 )
 ```
 
@@ -409,6 +412,8 @@ git commit -m "feat: support prefixed backend URLs"
 **Files:**
 - Create: `vercel.json`
 - Create: `frontend/vercel.json`
+- Create: `backend/.python-version`
+- Create: `backend/requirements.txt`
 - Create: `backend/tests/test_vercel_config.py`
 
 **Interfaces:**
@@ -457,6 +462,14 @@ def test_frontend_service_has_spa_fallback() -> None:
     assert config["rewrites"] == [
         {"source": "/(.*)", "destination": "/index.html"}
     ]
+
+
+def test_backend_service_declares_vercel_python_runtime_dependencies() -> None:
+    backend = ROOT / "backend"
+    assert (backend / ".python-version").read_text(encoding="utf-8").strip() == "3.12"
+    requirements = (backend / "requirements.txt").read_text(encoding="utf-8")
+    for package in ("fastapi==", "openai==", "playwright==", "websockets=="):
+        assert package in requirements
 ```
 
 - [x] **Step 2: Run the test and verify RED**
@@ -526,6 +539,25 @@ git add vercel.json frontend/vercel.json backend/tests/test_vercel_config.py
 git commit -m "feat: configure Vercel services"
 ```
 
+- [x] **Review fix: expose Poetry dependencies to Vercel Python**
+
+After the independent review showed that Vercel does not document legacy
+`[tool.poetry.dependencies]` discovery, pin Python 3.12 in
+`backend/.python-version` and export locked runtime dependencies:
+
+```bash
+cd backend
+uvx --from poetry --with poetry-plugin-export poetry export \
+  --format requirements.txt \
+  --without-hashes \
+  --only main \
+  --output requirements.txt
+uvx --from poetry poetry run pytest tests/test_vercel_config.py -v
+```
+
+Expected: the manifest test passes. A clean Python 3.12 `uv pip install
+--dry-run -r requirements.txt` resolves 81 packages.
+
 ---
 
 ### Task 4: Document deployment and browser BYOK
@@ -546,6 +578,8 @@ that none is a provider credential:
 ```dotenv
 BACKEND_PATH_PREFIX=/backend
 VITE_BACKEND_PATH_PREFIX=/backend
+IS_PROD=true
+LOCAL_ASSET_TOOLS_ENABLED=false
 LOCAL_ASSET_DIR=/tmp/screenshot-to-code/local-assets
 LOGS_PATH=/tmp/screenshot-to-code
 PROMPT_REPORTS_ENABLED=false
@@ -557,6 +591,9 @@ The section must also state:
 - apply variables to Production and Preview;
 - provider keys are entered in the application Settings dialog and must not be
   added to Vercel;
+- `IS_PROD=true` disables browser-provided OpenAI Base URLs;
+- `LOCAL_ASSET_TOOLS_ENABLED=false` disables ephemeral public asset tools until
+  durable object storage is configured;
 - Hobby generation connections can run for at most 300 seconds;
 - screenshot preview is unavailable until a compatible Chromium deployment is
   added, while core code generation remains available;
@@ -637,6 +674,8 @@ Start the backend in a terminal with non-secret runtime variables:
 ```bash
 cd backend
 BACKEND_PATH_PREFIX=/backend \
+IS_PROD=true \
+LOCAL_ASSET_TOOLS_ENABLED=false \
 LOCAL_ASSET_DIR=/tmp/screenshot-to-code/local-assets \
 LOGS_PATH=/tmp/screenshot-to-code \
 PROMPT_REPORTS_ENABLED=false \
@@ -658,12 +697,44 @@ continuing.
 Add exact test counts, build exit status, Pyright totals, lint baseline totals,
 and prefixed API probe results to `.ai/tasks/vercel-deployment.md`.
 
-- [ ] **Step 6: Commit the verified task state**
+- [x] **Step 6: Commit the verified task state**
 
 ```bash
 git add .ai/tasks/vercel-deployment.md
 git commit -m "chore: record Vercel verification"
 ```
+
+- [x] **Review fix: disable ephemeral local asset tools on Vercel**
+
+Add `LOCAL_ASSET_TOOLS_ENABLED` with a local default of `true`. When false:
+
+- `ParameterExtractionStage` must not stage uploaded asset IDs and must force
+  `should_extract_assets=False`;
+- `canonical_tool_definitions` must omit `save_assets` and `extract_assets`;
+- screenshots must still remain in the model input.
+
+Verify the RED -> GREEN cycle with:
+
+```bash
+cd backend
+uvx --from poetry poetry run pytest \
+  tests/test_agent_tools.py::test_canonical_tool_definitions_exclude_local_asset_tools_when_disabled \
+  tests/test_agent_tools.py::test_provider_session_excludes_local_asset_tools_when_runtime_disables_them \
+  tests/test_parameter_extraction_stage.py::test_disabled_local_asset_tools_skip_staging_and_extraction \
+  -v
+```
+
+- [x] **Review fix: derive the mounted prefix from ASGI scope**
+
+Make `infer_local_asset_base_url` default to `websocket.scope["root_path"]`
+and keep `generate_code.py` independent of `BACKEND_PATH_PREFIX`. The focused
+test must fail without scope inference and pass after the change.
+
+- [x] **Review fix: exercise FastAPI lifespan**
+
+Use every `TestClient` as a context manager and assert that the host startup
+probe is awaited once. This verifies that the mounted application is exercised
+through production-style lifespan entry and exit.
 
 ---
 
@@ -767,6 +838,8 @@ Add the following to Production and Preview:
 ```dotenv
 BACKEND_PATH_PREFIX=/backend
 VITE_BACKEND_PATH_PREFIX=/backend
+IS_PROD=true
+LOCAL_ASSET_TOOLS_ENABLED=false
 LOCAL_ASSET_DIR=/tmp/screenshot-to-code/local-assets
 LOGS_PATH=/tmp/screenshot-to-code
 PROMPT_REPORTS_ENABLED=false

@@ -35,6 +35,9 @@ GENERATION_MAX_COST_USD = 3.0
 PROMPT_REPORTS_ENABLED = os.environ.get(
     "PROMPT_REPORTS_ENABLED", ""
 ).strip().lower() in {"1", "true", "yes", "on"}
+LOCAL_ASSET_TOOLS_ENABLED = os.environ.get(
+    "LOCAL_ASSET_TOOLS_ENABLED", "true"
+).strip().lower() in {"1", "true", "yes", "on"}
 LOCAL_ASSET_DIR = os.environ.get(
     "LOCAL_ASSET_DIR", os.path.join(os.path.dirname(__file__), "local_assets")
 )

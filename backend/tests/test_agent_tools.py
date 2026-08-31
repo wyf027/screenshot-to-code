@@ -56,6 +56,17 @@ def test_canonical_tool_definitions_include_save_assets() -> None:
     assert save_assets_tool.parameters["properties"]["asset_ids"]["type"] == "array"
 
 
+def test_canonical_tool_definitions_exclude_local_asset_tools_when_disabled() -> None:
+    tools = canonical_tool_definitions(
+        True,
+        asset_extraction_enabled=True,
+        asset_persistence_enabled=False,
+    )
+    tool_names = [tool.name for tool in tools]
+    assert "save_assets" not in tool_names
+    assert "extract_assets" not in tool_names
+
+
 def test_save_assets_tool_input_summary_uses_asset_ids() -> None:
     summary = summarize_tool_input(
         ToolCall(
@@ -161,6 +172,29 @@ def test_provider_session_excludes_extract_assets_when_user_disables_it() -> Non
 
     tools = cast(list[dict[str, Any]], getattr(session, "_tools"))
     tool_names = [tool["name"] for tool in tools]
+    assert "extract_assets" not in tool_names
+
+
+def test_provider_session_excludes_local_asset_tools_when_runtime_disables_them(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "agent.providers.factory.LOCAL_ASSET_TOOLS_ENABLED", False
+    )
+    session = create_provider_session(
+        model=Llm.GPT_5_5_HIGH,
+        prompt_messages=[{"role": "user", "content": "Build a page."}],
+        should_generate_images=True,
+        openai_api_key="openai-key",
+        openai_base_url=None,
+        anthropic_api_key=None,
+        gemini_api_key="gemini-key",
+        replicate_api_key=None,
+    )
+
+    tools = cast(list[dict[str, Any]], getattr(session, "_tools"))
+    tool_names = [tool["name"] for tool in tools]
+    assert "save_assets" not in tool_names
     assert "extract_assets" not in tool_names
 
 
