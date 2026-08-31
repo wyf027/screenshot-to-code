@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
@@ -25,6 +26,33 @@ async def test_asset_extraction_preference_defaults_on_and_supports_opt_out(
     extracted = await stage.extract_and_validate(params)
 
     assert extracted.should_extract_assets is expected
+
+
+@pytest.mark.asyncio
+async def test_disabled_local_asset_tools_skip_staging_and_extraction(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr("routes.generate_code.LOCAL_ASSET_TOOLS_ENABLED", False)
+    monkeypatch.setattr("uploaded_assets.store.TEMP_ASSET_DIR", str(tmp_path))
+    stage = ParameterExtractionStage(AsyncMock())
+
+    extracted = await stage.extract_and_validate(
+        {
+            "generatedCodeConfig": "html_tailwind",
+            "inputMode": "image",
+            "geminiApiKey": "gemini-from-ui",
+            "isAssetExtractionEnabled": True,
+            "prompt": {
+                "text": "Build this page",
+                "images": ["data:image/png;base64,aW1hZ2U="],
+                "videos": [],
+            },
+        }
+    )
+
+    assert extracted.should_extract_assets is False
+    assert "Uploaded image asset IDs" not in extracted.prompt["text"]
+    assert not list(tmp_path.iterdir())
 
 
 @pytest.mark.asyncio

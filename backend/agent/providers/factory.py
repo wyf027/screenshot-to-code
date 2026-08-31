@@ -10,7 +10,7 @@ from agent.providers.base import ProviderSession
 from agent.providers.gemini import GeminiProviderSession, serialize_gemini_tools
 from agent.providers.openai import OpenAIProviderSession, serialize_openai_tools
 from agent.tools import canonical_tool_definitions
-from config import REPLICATE_API_KEY
+from config import LOCAL_ASSET_TOOLS_ENABLED, REPLICATE_API_KEY
 from fs_logging.agent_runs import AgentRunRecorder
 from llm import ANTHROPIC_MODELS, GEMINI_MODELS, OPENAI_MODELS, Llm
 from preview_screenshot import is_screenshot_preview_available
@@ -33,7 +33,12 @@ def create_provider_session(
         # The edit_images tool calls Replicate, so don't offer it without a key.
         image_editing_enabled=bool(replicate_api_key or REPLICATE_API_KEY),
         # The extract_assets tool calls Gemini, so don't offer it without a key.
-        asset_extraction_enabled=should_extract_assets and bool(gemini_api_key),
+        asset_extraction_enabled=(
+            LOCAL_ASSET_TOOLS_ENABLED
+            and should_extract_assets
+            and bool(gemini_api_key)
+        ),
+        asset_persistence_enabled=LOCAL_ASSET_TOOLS_ENABLED,
         # screenshot_preview needs headless Chromium; skip it if it can't launch.
         screenshot_enabled=is_screenshot_preview_available(),
     )

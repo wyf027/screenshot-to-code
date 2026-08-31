@@ -103,6 +103,51 @@ docker-compose up -d --build
 
 The app will be up and running at http://localhost:5173. Note that you can't develop the application with this setup, as file changes won't trigger a rebuild.
 
+## Vercel Services
+
+This fork can deploy the Vite frontend and FastAPI backend together in one
+Vercel project. Select the **Services** framework preset and apply these
+non-secret environment variables to both Production and Preview:
+
+```dotenv
+BACKEND_PATH_PREFIX=/backend
+VITE_BACKEND_PATH_PREFIX=/backend
+IS_PROD=true
+LOCAL_ASSET_TOOLS_ENABLED=false
+LOCAL_ASSET_DIR=/tmp/screenshot-to-code/local-assets
+LOGS_PATH=/tmp/screenshot-to-code
+PROMPT_REPORTS_ENABLED=false
+```
+
+The backend keeps its existing internal routes and is mounted under
+`/backend`, including:
+
+- WebSocket generation: `/backend/generate-code`
+- Backend capabilities: `/backend/api/capabilities`
+- Temporary generated assets: `/backend/local-assets/*`
+
+Provider credentials use browser BYOK for this deployment. Enter an OpenAI,
+Anthropic, or Gemini key in the application's Settings dialog. Do not add
+provider keys to the Vercel project or commit them to Git.
+
+`IS_PROD=true` disables custom OpenAI Base URLs in the public deployment.
+`LOCAL_ASSET_TOOLS_ENABLED=false` disables `save_assets` and `extract_assets`
+because Vercel `/tmp` storage is ephemeral and cannot provide durable public
+asset URLs across Function instances. Screenshot input and core code generation
+remain available; durable asset extraction can be added later with object
+storage.
+
+The backend service pins Python 3.12 in `backend/.python-version`, declares
+runtime dependencies through PEP 621 in `backend/pyproject.toml`, and commits
+`backend/uv.lock`. Vercel's Python builder therefore uses the same dependency
+set verified locally while Poetry remains available for development.
+
+Vercel Hobby Functions can keep a generation connection open for at most 300
+seconds. The first deployment does not bundle Chromium, so the optional
+screenshot-preview tool is unavailable; core screenshot-to-code generation
+continues to work. The `/backend` prefixes are opt-in, so the local development
+commands above continue to use the existing unprefixed backend routes.
+
 ## 🙋‍♂️ FAQs
 
 - **I'm running into an error when setting up the backend. How can I fix it?** [Try this](https://github.com/abi/screenshot-to-code/issues/3#issuecomment-1814777959). If that still doesn't work, open an issue.
