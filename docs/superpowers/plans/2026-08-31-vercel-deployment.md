@@ -4,7 +4,7 @@
 
 **Goal:** Deploy the Vite frontend and FastAPI WebSocket backend from `wyf027/screenshot-to-code` as one Vercel Services project while keeping provider keys browser-only.
 
-**Architecture:** Add an opt-in `/api` backend prefix shared by the Python router registration and the frontend's same-origin URL builder. Define Vite and FastAPI as two Vercel Services, keep all runtime files under `/tmp`, and preserve the existing local empty-prefix behavior.
+**Architecture:** Mount the complete existing FastAPI application under an opt-in `/backend` prefix and share that prefix with the frontend's same-origin URL builder. Define Vite and FastAPI as two Vercel Services, keep all runtime files under `/tmp`, and preserve the existing local empty-prefix behavior.
 
 **Tech Stack:** React 18, TypeScript, Vite 6, Tailwind CSS, FastAPI, Python 3.11, Poetry, pytest, Jest, Vercel Services, Fluid Compute, native WebSockets.
 
@@ -14,7 +14,7 @@
 
 - The GitHub repository is public and retains the upstream MIT license.
 - Provider keys remain browser BYOK and must not be stored in Git, Vercel environment variables, logs, screenshots, task cards, or documentation.
-- Local startup retains unprefixed routes; `/api` is opt-in through environment configuration.
+- Local startup retains its mixed existing routes; `/backend` is an opt-in ASGI mount through environment configuration.
 - Vercel Hobby maximum duration is 300 seconds.
 - The first Vercel deployment does not bundle Chromium; missing Chromium disables only screenshot preview.
 - Existing multi-provider selection and four-variant image generation remain unchanged.
@@ -23,18 +23,18 @@
 
 ---
 
-### Task 1: Add an opt-in backend route prefix
+### Task 1: Add an opt-in backend application mount
 
 **Files:**
 - Create: `backend/tests/test_backend_path_prefix.py`
 - Modify: `backend/config.py:1-37`
 - Modify: `backend/main.py:1-61`
-- Modify: `backend/uploaded_assets/store.py:38-57`
+- Modify: `backend/uploaded_assets/store.py:43-57`
 - Modify: `backend/routes/generate_code.py:20-32,739-760`
 
 **Interfaces:**
 - Consumes: `FastAPI`, the existing route modules, and `LOCAL_ASSET_DIR`.
-- Produces: `normalize_path_prefix(value: str | None) -> str`, `BACKEND_PATH_PREFIX: str`, `create_app(path_prefix: str = BACKEND_PATH_PREFIX) -> FastAPI`, `configure_uploaded_asset_routes(app: FastAPI, path_prefix: str = "") -> None`, and prefix-aware local-asset base URLs.
+- Produces: `normalize_path_prefix(value: str | None) -> str`, `BACKEND_PATH_PREFIX: str`, `create_route_app() -> FastAPI`, `create_app(path_prefix: str = BACKEND_PATH_PREFIX) -> FastAPI`, and prefix-aware local-asset base URLs.
 
 - [ ] **Step 1: Read the test-design rules**
 
@@ -49,8 +49,10 @@ Create `backend/tests/test_backend_path_prefix.py`:
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
+from unittest.mock import AsyncMock
 
 from fastapi import WebSocket
+from fastapi.testclient import TestClient
 import pytest
 
 from config import normalize_path_prefix
@@ -64,37 +66,63 @@ from uploaded_assets import infer_local_asset_base_url
         (None, ""),
         ("", ""),
         ("/", ""),
-        ("api", "/api"),
-        ("/api/", "/api"),
+        ("backend", "/backend"),
+        ("/backend/", "/backend"),
     ],
 )
 def test_normalize_path_prefix(raw: str | None, expected: str) -> None:
     assert normalize_path_prefix(raw) == expected
 
 
-def _route_paths(path_prefix: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> set[str]:
+def _client(
+    path_prefix: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> TestClient:
     monkeypatch.setattr("uploaded_assets.store.LOCAL_ASSET_DIR", str(tmp_path))
-    return {route.path for route in create_app(path_prefix).routes}
+    return TestClient(create_app(path_prefix))
 
 
 def test_create_app_preserves_local_unprefixed_routes(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    paths = _route_paths("", monkeypatch, tmp_path)
-    assert "/generate-code" in paths
-    assert "/capabilities" in paths
-    assert "/local-assets" in paths
-    assert "/api/generate-code" not in paths
+    client = _client("", monkeypatch, tmp_path)
+    assert client.get("/").status_code == 200
+    assert client.get("/backend/").status_code == 404
 
 
-def test_create_app_prefixes_http_websocket_and_asset_routes(
+def test_create_app_mounts_existing_http_routes_under_backend(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    paths = _route_paths("/api", monkeypatch, tmp_path)
-    assert "/api/generate-code" in paths
-    assert "/api/capabilities" in paths
-    assert "/api/local-assets" in paths
-    assert "/generate-code" not in paths
+    monkeypatch.setattr(
+        "routes.capabilities.probe_screenshot_preview",
+        AsyncMock(return_value=False),
+    )
+    client = _client("/backend", monkeypatch, tmp_path)
+    assert client.get("/").status_code == 404
+    assert client.get("/backend/").status_code == 200
+    response = client.get("/backend/api/capabilities")
+    assert response.status_code == 200
+    assert response.json() == {"screenshot_preview": False}
+
+
+def test_create_app_mounts_static_assets_under_backend(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    (tmp_path / "asset.png").write_bytes(b"asset-bytes")
+    client = _client("/backend", monkeypatch, tmp_path)
+    response = client.get("/backend/local-assets/asset.png")
+    assert response.status_code == 200
+    assert response.content == b"asset-bytes"
+
+
+def test_create_app_mounts_websocket_under_backend(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    client = _client("/backend", monkeypatch, tmp_path)
+    with client.websocket_connect("/backend/generate-code") as websocket:
+        websocket.send_json({})
+        response = websocket.receive_json()
+    assert response["type"] == "error"
+    assert "Invalid generated code config" in response["value"]
 
 
 def test_asset_base_url_includes_the_backend_prefix() -> None:
@@ -109,8 +137,8 @@ def test_asset_base_url_includes_the_backend_prefix() -> None:
         ),
     )
     assert (
-        infer_local_asset_base_url(websocket, "/api")
-        == "https://example.vercel.app/api"
+        infer_local_asset_base_url(websocket, "/backend")
+        == "https://example.vercel.app/backend"
     )
 ```
 
@@ -140,33 +168,18 @@ def normalize_path_prefix(value: str | None) -> str:
 BACKEND_PATH_PREFIX = normalize_path_prefix(os.environ.get("BACKEND_PATH_PREFIX"))
 ```
 
-- [ ] **Step 5: Make uploaded assets prefix-aware**
+- [ ] **Step 5: Make generated asset URLs prefix-aware**
 
-Replace `configure_uploaded_asset_routes` in
-`backend/uploaded_assets/store.py` with:
-
-```python
-def configure_uploaded_asset_routes(
-    app: FastAPI, path_prefix: str = ""
-) -> None:
-    os.makedirs(LOCAL_ASSET_DIR, exist_ok=True)
-    mount_path = f"{path_prefix}/local-assets" if path_prefix else "/local-assets"
-app.mount(
-        mount_path,
-        StaticFiles(directory=LOCAL_ASSET_DIR),
-        name="local-assets",
-)
-```
-
-Update `infer_local_asset_base_url` in the same file to accept
+Update `infer_local_asset_base_url` in `backend/uploaded_assets/store.py` to accept
 `path_prefix: str = ""` and return `f"{scheme}://{host}{path_prefix}"`. This
 keeps local URLs unchanged and makes generated asset URLs point at
-`/api/local-assets` on Vercel.
+`/backend/local-assets` on Vercel.
 
 - [ ] **Step 6: Add an application factory**
 
 Refactor `backend/main.py` so startup handlers remain module-level functions,
-then define:
+then define a route application containing the unchanged existing routes and a
+host application that mounts it only when a prefix is configured:
 
 ```python
 ROUTERS = (
@@ -183,9 +196,20 @@ ROUTERS = (
 )
 
 
+def create_route_app() -> FastAPI:
+    route_app = FastAPI(openapi_url=None, docs_url=None, redoc_url=None)
+    configure_uploaded_asset_routes(route_app)
+    for router in ROUTERS:
+        route_app.include_router(router)
+    return route_app
+
+
 def create_app(path_prefix: str = BACKEND_PATH_PREFIX) -> FastAPI:
-    application = FastAPI(openapi_url=None, docs_url=None, redoc_url=None)
-    configure_uploaded_asset_routes(application, path_prefix)
+    route_app = create_route_app()
+    application = route_app
+    if path_prefix:
+        application = FastAPI(openapi_url=None, docs_url=None, redoc_url=None)
+        application.mount(path_prefix, route_app)
     application.add_event_handler("startup", log_debug_mode)
     application.add_event_handler("startup", probe_screenshot_preview_on_startup)
     application.add_middleware(
@@ -195,8 +219,6 @@ def create_app(path_prefix: str = BACKEND_PATH_PREFIX) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    for router in ROUTERS:
-        application.include_router(router, prefix=path_prefix)
     return application
 
 
@@ -204,8 +226,9 @@ app = create_app()
 ```
 
 Import `BACKEND_PATH_PREFIX` alongside `IS_DEBUG_ENABLED`. Remove the old
-decorator-bound global app construction and the repeated `include_router`
-calls.
+decorator-bound global app construction. Do not add a prefix to any individual
+router: the sub-application mount must preserve existing internal paths such as
+`/generate-code` and `/api/capabilities`.
 
 In `backend/routes/generate_code.py`, import `BACKEND_PATH_PREFIX` from
 `config` and pass it to the asset URL inference call:
@@ -245,7 +268,7 @@ Pyright errors and no new warnings.
 
 ```bash
 git add backend/config.py backend/main.py backend/routes/generate_code.py backend/uploaded_assets/store.py backend/tests/test_backend_path_prefix.py
-git commit -m "feat: support prefixed backend routes"
+git commit -m "feat: mount backend under deployment prefix"
 ```
 
 ---
@@ -276,8 +299,8 @@ describe("backend URL construction", () => {
     [undefined, ""],
     ["", ""],
     ["/", ""],
-    ["api", "/api"],
-    ["/api/", "/api"],
+    ["backend", "/backend"],
+    ["/backend/", "/backend"],
   ])("normalizes %p to %p", (raw, expected) => {
     expect(normalizeBackendPathPrefix(raw)).toBe(expected);
   });
@@ -290,9 +313,9 @@ describe("backend URL construction", () => {
   });
 
   test("adds the production prefix to HTTP and WebSocket origins", () => {
-    expect(buildBackendUrls("https://example.vercel.app", "/api")).toEqual({
-      http: "https://example.vercel.app/api",
-      ws: "wss://example.vercel.app/api",
+    expect(buildBackendUrls("https://example.vercel.app", "/backend")).toEqual({
+      http: "https://example.vercel.app/backend",
+      ws: "wss://example.vercel.app/backend",
     });
   });
 });
@@ -388,7 +411,7 @@ git commit -m "feat: support prefixed backend URLs"
 - Create: `backend/tests/test_vercel_config.py`
 
 **Interfaces:**
-- Consumes: Vercel Services configuration and the `/api` prefix from Tasks 1-2.
+- Consumes: Vercel Services configuration and the `/backend` prefix from Tasks 1-2.
 - Produces: one public deployment with `frontend` and `backend` services, backend-first rewrites, Vite SPA fallback, Fluid Compute, and a 300-second backend duration.
 
 - [ ] **Step 1: Write the failing Vercel configuration test**
@@ -423,7 +446,7 @@ def test_root_vercel_config_declares_frontend_and_backend_services() -> None:
     }
     assert config["fluid"] is True
     assert config["rewrites"] == [
-        {"source": "/api/(.*)", "destination": {"service": "backend"}},
+        {"source": "/backend/(.*)", "destination": {"service": "backend"}},
         {"source": "/(.*)", "destination": {"service": "frontend"}},
     ]
 
@@ -465,7 +488,7 @@ Create `vercel.json`:
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": { "service": "backend" } },
+    { "source": "/backend/(.*)", "destination": { "service": "backend" } },
     { "source": "/(.*)", "destination": { "service": "frontend" } }
   ]
 }
@@ -520,8 +543,8 @@ Document all of the following verbatim environment assignments, while stating
 that none is a provider credential:
 
 ```dotenv
-BACKEND_PATH_PREFIX=/api
-VITE_BACKEND_PATH_PREFIX=/api
+BACKEND_PATH_PREFIX=/backend
+VITE_BACKEND_PATH_PREFIX=/backend
 LOCAL_ASSET_DIR=/tmp/screenshot-to-code/local-assets
 LOGS_PATH=/tmp/screenshot-to-code
 PROMPT_REPORTS_ENABLED=false
@@ -612,7 +635,7 @@ Start the backend in a terminal with non-secret runtime variables:
 
 ```bash
 cd backend
-BACKEND_PATH_PREFIX=/api \
+BACKEND_PATH_PREFIX=/backend \
 LOCAL_ASSET_DIR=/tmp/screenshot-to-code/local-assets \
 LOGS_PATH=/tmp/screenshot-to-code \
 PROMPT_REPORTS_ENABLED=false \
@@ -622,8 +645,8 @@ uvx --from poetry poetry run uvicorn main:app --host 127.0.0.1 --port 7001
 From another terminal:
 
 ```bash
-curl --fail --silent --show-error http://127.0.0.1:7001/api/capabilities
-curl --fail --silent --show-error http://127.0.0.1:7001/api/
+curl --fail --silent --show-error http://127.0.0.1:7001/backend/api/capabilities
+curl --fail --silent --show-error http://127.0.0.1:7001/backend/
 ```
 
 Expected: both requests return successfully. Stop the Uvicorn process before
@@ -741,8 +764,8 @@ create separate Vercel projects without new user approval.
 Add the following to Production and Preview:
 
 ```dotenv
-BACKEND_PATH_PREFIX=/api
-VITE_BACKEND_PATH_PREFIX=/api
+BACKEND_PATH_PREFIX=/backend
+VITE_BACKEND_PATH_PREFIX=/backend
 LOCAL_ASSET_DIR=/tmp/screenshot-to-code/local-assets
 LOGS_PATH=/tmp/screenshot-to-code
 PROMPT_REPORTS_ENABLED=false
@@ -781,7 +804,7 @@ layer.
 
 ```bash
 curl --fail --silent --show-error "$DEPLOYMENT_URL/"
-curl --fail --silent --show-error "$DEPLOYMENT_URL/api/capabilities"
+curl --fail --silent --show-error "$DEPLOYMENT_URL/backend/api/capabilities"
 ```
 
 Set `DEPLOYMENT_URL` to the exact HTTPS production URL recorded in Task 7.
@@ -791,7 +814,7 @@ Expected: the frontend HTML and a capabilities JSON response both return 2xx.
 
 Use the installed backend Python environment to open and cleanly close
 the WebSocket URL formed by replacing the `https` scheme in `DEPLOYMENT_URL`
-with `wss` and appending `/api/generate-code`. Expected: the WebSocket upgrade
+with `wss` and appending `/backend/generate-code`. Expected: the WebSocket upgrade
 succeeds. Do not send a provider key or record browser storage.
 
 - [ ] **Step 3: Verify missing-key behavior in Chrome**

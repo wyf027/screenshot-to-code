@@ -8,7 +8,7 @@ keys outside the browser.
 
 ## Current State
 
-- Status: written spec approved; implementation plan drafted; execution pending.
+- Status: revised `/backend` mount design approved; implementation in progress.
 - Branch: `feat/vercel-deployment`.
 - Worktree: `.worktrees/vercel-deployment`.
 - Upstream base: `d026163f586dfa8c5c10d28c36edd59a9d3b0e88`.
@@ -16,6 +16,8 @@ keys outside the browser.
 - GitHub fork: `https://github.com/wyf027/screenshot-to-code` (public).
 - Vercel account: `Leno23's projects`, Hobby.
 - Approved credential boundary: browser BYOK; no provider key in Vercel env.
+- Approved deployment mount: `/backend`; existing internal routes remain
+  unchanged (`/generate-code`, `/api/capabilities`, `/local-assets/*`).
 
 ## Design Source
 
@@ -41,6 +43,8 @@ keys outside the browser.
 - Do not store, display, log, commit, or inspect provider keys.
 - If Vercel Services is unavailable, stop and request approval before using the
   two-project fallback.
+- The invalid `/api` router-prefix attempt is preserved in
+  `stash@{0}` as a recoverable checkpoint and must not be reapplied.
 
 ## Implementation Plan
 
@@ -48,5 +52,4 @@ keys outside the browser.
 
 ## Next Action
 
-Commit and push the implementation plan, then obtain the user's execution-mode
-choice before editing runtime code.
+Execute Task 1 from the revised implementation plan with a fresh failing test.

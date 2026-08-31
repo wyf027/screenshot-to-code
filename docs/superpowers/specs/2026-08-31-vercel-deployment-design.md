@@ -2,7 +2,9 @@
 
 ## Status
 
-Approved in chat on 2026-08-31. The repository is the public GitHub fork
+Approved in chat on 2026-08-31 and revised the same day after discovering the
+upstream backend's mixed `/generate-code` and `/api/*` route layout. The
+repository is the public GitHub fork
 `wyf027/screenshot-to-code`, with `abi/screenshot-to-code` retained as the
 upstream project and the MIT license preserved.
 
@@ -27,8 +29,8 @@ WebSocket and must not persist or expose provider credentials.
 - Do not bundle or require a Chromium browser in the first Vercel deployment.
   The existing capability probe will omit screenshot preview when Chromium is
   unavailable.
-- Preserve local routes and local startup commands by making the production
-  backend path prefix opt-in.
+- Preserve local routes and local startup commands by mounting the complete
+  backend ASGI application under an opt-in production prefix.
 
 ## Architecture
 
@@ -37,24 +39,26 @@ The root `vercel.json` defines two Vercel Services:
 - `frontend`: root `frontend/`, detected as Vite, exposed by the catch-all
   rewrite.
 - `backend`: root `backend/`, FastAPI entrypoint `main:app`, exposed first by
-  the `/api/(.*)` rewrite.
+  the `/backend/(.*)` rewrite.
 
 Vercel evaluates the backend rewrite before the frontend catch-all. Public
 traffic therefore follows this layout:
 
 ```text
 https://<deployment>/                 -> frontend service
-https://<deployment>/api/...          -> backend service
-wss://<deployment>/api/generate-code  -> FastAPI WebSocket
+https://<deployment>/backend/...          -> backend service
+wss://<deployment>/backend/generate-code  -> FastAPI WebSocket
 ```
 
 The backend reads `BACKEND_PATH_PREFIX`. An empty value preserves current
-local routes such as `/generate-code`. The Vercel deployment sets it to
-`/api`, producing `/api/generate-code` and the corresponding prefixed HTTP
-routes.
+local routes such as `/generate-code` and `/api/capabilities`. The Vercel
+deployment sets it to `/backend` and mounts the entire existing FastAPI
+application as a sub-application. Public routes therefore become
+`/backend/generate-code`, `/backend/api/capabilities`, and
+`/backend/local-assets/*` without rewriting any internal route.
 
 The frontend reads `VITE_BACKEND_PATH_PREFIX`. Its default remains empty. On
-Vercel it is `/api`, so the existing same-origin URL calculation produces
+Vercel it is `/backend`, so the existing same-origin URL calculation produces
 preview-safe and production-safe HTTP and WSS URLs without hardcoding a Vercel
 domain.
 
@@ -64,7 +68,7 @@ domain.
 2. The user opens Settings and enters at least one provider key.
 3. The browser stores the key using the upstream client-side settings flow.
 4. A screenshot generation opens
-   `wss://<current-origin>/api/generate-code`.
+   `wss://<current-origin>/backend/generate-code`.
 5. Vercel routes the connection to the FastAPI service. The connection remains
    pinned to that Function instance for the generation.
 6. The backend sends model output and status messages over the same socket.
@@ -118,12 +122,15 @@ turn safely.
 - `vercel.json`: define the two Services, backend-first rewrites, Fluid
   compute, and the Hobby-compatible maximum duration.
 - `backend/config.py`: normalize an optional backend path prefix.
-- `backend/main.py`: register backend routers and local-asset mounting under
-  the configured prefix.
-- `backend/uploaded_assets/store.py`: accept the configured mount prefix.
+- `backend/main.py`: preserve the existing internal routes and mount the full
+  FastAPI application under the configured prefix.
+- `backend/uploaded_assets/store.py`: include the configured prefix in public
+  local-asset base URLs.
+- `backend/routes/generate_code.py`: pass the configured prefix into local
+  asset URL inference.
 - `frontend/src/config.ts`: apply the optional path prefix to same-origin HTTP
   and WebSocket base URLs.
-- Backend and frontend tests: prove empty-prefix compatibility and `/api`
+- Backend and frontend tests: prove empty-prefix compatibility and `/backend`
   production routing.
 - `README.md`: document Vercel Services deployment, browser BYOK, temporary
   storage, Hobby limits, and the first-deployment Chromium limitation.
@@ -147,8 +154,8 @@ Deployment verification:
 - GitHub repository is public and contains no secrets.
 - Vercel builds both services from the GitHub branch.
 - The frontend loads on the Vercel preview URL.
-- `/api/capabilities` returns successfully.
-- `/api/generate-code` accepts a WebSocket connection.
+- `/backend/api/capabilities` returns successfully.
+- `/backend/generate-code` accepts a WebSocket connection.
 - Missing-key behavior points to Settings.
 - After the user enters a provider key in Chrome, one real screenshot-to-code
   generation completes and renders generated code.
