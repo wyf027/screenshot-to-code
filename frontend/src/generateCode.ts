@@ -106,7 +106,7 @@ export function generateCode(
       console.error("Known server error", event);
       callbacks.onCancel(
         "request_failed",
-        serverErrorMessage || event.reason || ERROR_MESSAGE
+        event.reason || serverErrorMessage || ERROR_MESSAGE
       );
     } else if (event.code !== 1000) {
       console.error("Unknown server or connection error", event);
