@@ -137,9 +137,10 @@ asset URLs across Function instances. Screenshot input and core code generation
 remain available; durable asset extraction can be added later with object
 storage.
 
-The backend service pins Python 3.12 in `backend/.python-version`. Its
-`backend/requirements.txt` is exported from Poetry so Vercel's Python builder
-installs the same locked runtime dependencies.
+The backend service pins Python 3.12 in `backend/.python-version`, declares
+runtime dependencies through PEP 621 in `backend/pyproject.toml`, and commits
+`backend/uv.lock`. Vercel's Python builder therefore uses the same dependency
+set verified locally while Poetry remains available for development.
 
 Vercel Hobby Functions can keep a generation connection open for at most 300
 seconds. The first deployment does not bundle Chromium, so the optional

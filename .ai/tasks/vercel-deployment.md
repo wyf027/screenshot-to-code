@@ -55,15 +55,15 @@ keys outside the browser.
 - Chromium probe: unavailable and automatically disabled, as designed for the
   first Vercel deployment.
 - Provider secret-pattern scan: no matches.
-- Python 3.12 requirements dry-run: 81 packages resolved successfully.
+- Python 3.12 locked environment: 93 packages resolved; 292 tests passed.
 
 ## Independent Review
 
 - Review range: `d026163..6d4ec88`.
 - Initial verdict: ready with fixes.
-- Blocking manifest finding: addressed with `backend/.python-version` and a
-  Poetry-exported `backend/requirements.txt`; Python 3.12 dry-run resolved 81
-  packages.
+- Blocking manifest finding: addressed with `backend/.python-version`, PEP 621
+  `[project].dependencies`, and `backend/uv.lock`; the clean Python 3.12 locked
+  environment synchronized successfully and passed all 292 backend tests.
 - Production-mode finding: addressed by requiring `IS_PROD=true` in Vercel.
 - Ephemeral asset finding: addressed by disabling local asset staging,
   `save_assets`, and `extract_assets` on Vercel.

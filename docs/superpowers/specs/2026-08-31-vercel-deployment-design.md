@@ -136,8 +136,9 @@ turn safely.
 - `backend/agent/tools/definitions.py` and
   `backend/agent/providers/factory.py`: omit local asset tools when the runtime
   disables ephemeral asset persistence.
-- `backend/.python-version` and `backend/requirements.txt`: pin Vercel Python
-  3.12 and expose locked dependencies to the Vercel Python builder.
+- `backend/.python-version`, PEP 621 `backend/pyproject.toml`, and
+  `backend/uv.lock`: pin Vercel Python 3.12 and expose locked dependencies to
+  the Vercel Python builder while retaining Poetry development workflows.
 - `frontend/src/config.ts`: apply the optional path prefix to same-origin HTTP
   and WebSocket base URLs.
 - Backend and frontend tests: prove empty-prefix compatibility and `/backend`

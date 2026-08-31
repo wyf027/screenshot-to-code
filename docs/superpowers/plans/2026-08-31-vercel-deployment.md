@@ -413,7 +413,8 @@ git commit -m "feat: support prefixed backend URLs"
 - Create: `vercel.json`
 - Create: `frontend/vercel.json`
 - Create: `backend/.python-version`
-- Create: `backend/requirements.txt`
+- Modify: `backend/pyproject.toml`
+- Create: `backend/uv.lock`
 - Create: `backend/tests/test_vercel_config.py`
 
 **Interfaces:**
@@ -427,6 +428,7 @@ Create `backend/tests/test_vercel_config.py`:
 ```python
 import json
 from pathlib import Path
+import tomllib
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -467,9 +469,17 @@ def test_frontend_service_has_spa_fallback() -> None:
 def test_backend_service_declares_vercel_python_runtime_dependencies() -> None:
     backend = ROOT / "backend"
     assert (backend / ".python-version").read_text(encoding="utf-8").strip() == "3.12"
-    requirements = (backend / "requirements.txt").read_text(encoding="utf-8")
-    for package in ("fastapi==", "openai==", "playwright==", "websockets=="):
-        assert package in requirements
+    project = tomllib.loads((backend / "pyproject.toml").read_text(encoding="utf-8"))
+    dependencies = project["project"]["dependencies"]
+    for package in ("fastapi", "openai", "playwright", "websockets"):
+        assert any(dependency.startswith(package) for dependency in dependencies)
+    assert not any(dependency.startswith("pre-commit") for dependency in dependencies)
+    assert not any(dependency.startswith("types-pillow") for dependency in dependencies)
+    lock = tomllib.loads((backend / "uv.lock").read_text(encoding="utf-8"))
+    locked_names = {package["name"] for package in lock["package"]}
+    for package in ("fastapi", "openai", "playwright", "websockets"):
+        assert package in locked_names
+    assert project["tool"]["uv"]["package"] is False
 ```
 
 - [x] **Step 2: Run the test and verify RED**
@@ -542,21 +552,22 @@ git commit -m "feat: configure Vercel services"
 - [x] **Review fix: expose Poetry dependencies to Vercel Python**
 
 After the independent review showed that Vercel does not document legacy
-`[tool.poetry.dependencies]` discovery, pin Python 3.12 in
-`backend/.python-version` and export locked runtime dependencies:
+`[tool.poetry.dependencies]` discovery, pin Python 3.12, migrate runtime
+dependencies to PEP 621 `[project].dependencies`, retain Poetry's
+`package-mode=false`, set uv's `package=false`, and commit `uv.lock`:
 
 ```bash
 cd backend
-uvx --from poetry --with poetry-plugin-export poetry export \
-  --format requirements.txt \
-  --without-hashes \
-  --only main \
-  --output requirements.txt
+uvx --from poetry poetry lock
+uv lock --python 3.12
+uvx --from poetry poetry check --lock
+uv lock --check
 uvx --from poetry poetry run pytest tests/test_vercel_config.py -v
 ```
 
-Expected: the manifest test passes. A clean Python 3.12 `uv pip install
---dry-run -r requirements.txt` resolves 81 packages.
+Expected: the manifest test passes. A clean Python 3.12
+`uv sync --group dev` resolves the committed lock, and all 292 backend tests
+pass in that clean environment.
 
 ---
 
