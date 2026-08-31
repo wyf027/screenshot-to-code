@@ -98,3 +98,10 @@ keys outside the browser.
 
 Create and merge the GitHub pull request, then import the repository into
 Vercel.
+
+## Vercel Schema Probe
+
+- Services preset detected both `frontend` and `backend` on the Hobby account.
+- Initial import schema rejected `services.backend.maxDuration` as unsupported.
+- The field was removed; Hobby Fluid Compute retains its default 300-second
+  duration.
