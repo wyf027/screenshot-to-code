@@ -395,7 +395,7 @@ pnpm build
 Expected: the existing 42 tests plus the new tests pass, and the Vite production
 build exits 0.
 
-- [ ] **Step 7: Commit the frontend URL change**
+- [x] **Step 7: Commit the frontend URL change**
 
 ```bash
 git add frontend/src/config.ts frontend/src/lib/backend-urls.ts frontend/src/lib/backend-urls.test.ts
@@ -415,7 +415,7 @@ git commit -m "feat: support prefixed backend URLs"
 - Consumes: Vercel Services configuration and the `/backend` prefix from Tasks 1-2.
 - Produces: one public deployment with `frontend` and `backend` services, backend-first rewrites, Vite SPA fallback, Fluid Compute, and a 300-second backend duration.
 
-- [ ] **Step 1: Write the failing Vercel configuration test**
+- [x] **Step 1: Write the failing Vercel configuration test**
 
 Create `backend/tests/test_vercel_config.py`:
 
@@ -459,7 +459,7 @@ def test_frontend_service_has_spa_fallback() -> None:
     ]
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [x] **Step 2: Run the test and verify RED**
 
 ```bash
 cd backend
@@ -468,7 +468,7 @@ uvx --from poetry poetry run pytest tests/test_vercel_config.py -v
 
 Expected: FAIL with `FileNotFoundError` for the absent root `vercel.json`.
 
-- [ ] **Step 3: Create the root Services configuration**
+- [x] **Step 3: Create the root Services configuration**
 
 Create `vercel.json`:
 
@@ -495,7 +495,7 @@ Create `vercel.json`:
 }
 ```
 
-- [ ] **Step 4: Create the Vite SPA service configuration**
+- [x] **Step 4: Create the Vite SPA service configuration**
 
 Create `frontend/vercel.json`:
 
@@ -506,7 +506,7 @@ Create `frontend/vercel.json`:
 }
 ```
 
-- [ ] **Step 5: Run configuration tests and syntax checks**
+- [x] **Step 5: Run configuration tests and syntax checks**
 
 ```bash
 cd backend
