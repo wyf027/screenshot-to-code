@@ -36,12 +36,12 @@
 - Consumes: `FastAPI`, the existing route modules, and `LOCAL_ASSET_DIR`.
 - Produces: `normalize_path_prefix(value: str | None) -> str`, `BACKEND_PATH_PREFIX: str`, `create_route_app() -> FastAPI`, `create_app(path_prefix: str = BACKEND_PATH_PREFIX) -> FastAPI`, and prefix-aware local-asset base URLs.
 
-- [ ] **Step 1: Read the test-design rules**
+- [x] **Step 1: Read the test-design rules**
 
 Read `superpowers:test-driven-development` and its linked
 `writing-good-tests.md` before editing the test file.
 
-- [ ] **Step 2: Write the failing backend prefix tests**
+- [x] **Step 2: Write the failing backend prefix tests**
 
 Create `backend/tests/test_backend_path_prefix.py`:
 
@@ -118,9 +118,10 @@ def test_create_app_mounts_websocket_under_backend(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     client = _client("/backend", monkeypatch, tmp_path)
-    with client.websocket_connect("/backend/generate-code") as websocket:
-        websocket.send_json({})
-        response = websocket.receive_json()
+    with pytest.raises(ValueError, match="Invalid generated code config"):
+        with client.websocket_connect("/backend/generate-code") as websocket:
+            websocket.send_json({})
+            response = websocket.receive_json()
     assert response["type"] == "error"
     assert "Invalid generated code config" in response["value"]
 
@@ -142,7 +143,7 @@ def test_asset_base_url_includes_the_backend_prefix() -> None:
     )
 ```
 
-- [ ] **Step 3: Run the tests and verify RED**
+- [x] **Step 3: Run the tests and verify RED**
 
 Run:
 
@@ -153,7 +154,7 @@ uvx --from poetry poetry run pytest tests/test_backend_path_prefix.py -v
 
 Expected: collection fails because `normalize_path_prefix` and `create_app` do not exist.
 
-- [ ] **Step 4: Implement prefix normalization**
+- [x] **Step 4: Implement prefix normalization**
 
 Add to `backend/config.py` before the derived configuration values:
 
@@ -168,14 +169,14 @@ def normalize_path_prefix(value: str | None) -> str:
 BACKEND_PATH_PREFIX = normalize_path_prefix(os.environ.get("BACKEND_PATH_PREFIX"))
 ```
 
-- [ ] **Step 5: Make generated asset URLs prefix-aware**
+- [x] **Step 5: Make generated asset URLs prefix-aware**
 
 Update `infer_local_asset_base_url` in `backend/uploaded_assets/store.py` to accept
 `path_prefix: str = ""` and return `f"{scheme}://{host}{path_prefix}"`. This
 keeps local URLs unchanged and makes generated asset URLs point at
 `/backend/local-assets` on Vercel.
 
-- [ ] **Step 6: Add an application factory**
+- [x] **Step 6: Add an application factory**
 
 Refactor `backend/main.py` so startup handlers remain module-level functions,
 then define a route application containing the unchanged existing routes and a
@@ -240,7 +241,7 @@ param_extractor = ParameterExtractionStage(
 )
 ```
 
-- [ ] **Step 7: Run targeted tests and verify GREEN**
+- [x] **Step 7: Run targeted tests and verify GREEN**
 
 Run:
 
@@ -251,7 +252,7 @@ uvx --from poetry poetry run pytest tests/test_backend_path_prefix.py tests/test
 
 Expected: all selected tests pass.
 
-- [ ] **Step 8: Run backend regression and changed-file type checks**
+- [x] **Step 8: Run backend regression and changed-file type checks**
 
 Run:
 

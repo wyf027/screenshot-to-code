@@ -40,7 +40,7 @@ def configure_uploaded_asset_routes(app: FastAPI) -> None:
     app.mount("/local-assets", StaticFiles(directory=LOCAL_ASSET_DIR), name="local-assets")
 
 
-def infer_local_asset_base_url(websocket: WebSocket) -> str:
+def infer_local_asset_base_url(websocket: WebSocket, path_prefix: str = "") -> str:
     forwarded_host = websocket.headers.get("x-forwarded-host")
     host = (forwarded_host or websocket.headers.get("host") or "").split(",", 1)[0]
     host = host.strip()
@@ -54,7 +54,7 @@ def infer_local_asset_base_url(websocket: WebSocket) -> str:
     if not scheme:
         scheme = "http"
 
-    return f"{scheme}://{host}"
+    return f"{scheme}://{host}{path_prefix}"
 
 
 def _asset_url(base_url: str, route: str, filename: str) -> str:

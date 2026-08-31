@@ -1,5 +1,15 @@
 import os
 
+
+def normalize_path_prefix(value: str | None) -> str:
+    cleaned = (value or "").strip()
+    if not cleaned or cleaned == "/":
+        return ""
+    return f"/{cleaned.strip('/')}"
+
+
+BACKEND_PATH_PREFIX = normalize_path_prefix(os.environ.get("BACKEND_PATH_PREFIX"))
+
 NUM_VARIANTS = 4
 NUM_VARIANTS_VIDEO = 2
 

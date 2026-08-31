@@ -11,6 +11,7 @@ from starlette.websockets import WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK, ConnectionClosedError
 from config import (
     ANTHROPIC_API_KEY,
+    BACKEND_PATH_PREFIX,
     GEMINI_API_KEY,
     IS_DEBUG_ENABLED,
     IS_PROD,
@@ -746,7 +747,7 @@ class ParameterExtractionMiddleware(Middleware):
         # Extract and validate
         param_extractor = ParameterExtractionStage(
             context.throw_error,
-            infer_local_asset_base_url(context.websocket),
+            infer_local_asset_base_url(context.websocket, BACKEND_PATH_PREFIX),
         )
         context.extracted_params = await param_extractor.extract_and_validate(
             context.params
