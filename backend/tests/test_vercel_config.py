@@ -22,7 +22,6 @@ def test_root_vercel_config_declares_frontend_and_backend_services() -> None:
         "root": "backend/",
         "framework": "fastapi",
         "entrypoint": "main:app",
-        "maxDuration": 300,
     }
     assert config["fluid"] is True
     assert config["rewrites"] == [

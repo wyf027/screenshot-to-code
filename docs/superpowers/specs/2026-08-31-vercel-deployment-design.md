@@ -124,8 +124,8 @@ turn safely.
 
 ## Expected Code and Configuration Changes
 
-- `vercel.json`: define the two Services, backend-first rewrites, Fluid
-  compute, and the Hobby-compatible maximum duration.
+- `vercel.json`: define the two Services and backend-first rewrites. Fluid
+  Compute supplies the Hobby plan's default 300-second maximum duration.
 - `backend/config.py`: normalize an optional backend path prefix.
 - `backend/main.py`: preserve the existing internal routes and mount the full
   FastAPI application under the configured prefix.

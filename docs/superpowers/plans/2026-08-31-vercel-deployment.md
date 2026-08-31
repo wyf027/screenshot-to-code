@@ -419,7 +419,7 @@ git commit -m "feat: support prefixed backend URLs"
 
 **Interfaces:**
 - Consumes: Vercel Services configuration and the `/backend` prefix from Tasks 1-2.
-- Produces: one public deployment with `frontend` and `backend` services, backend-first rewrites, Vite SPA fallback, Fluid Compute, and a 300-second backend duration.
+- Produces: one public deployment with `frontend` and `backend` services, backend-first rewrites, Vite SPA fallback, and the Hobby Fluid Compute default 300-second duration.
 
 - [x] **Step 1: Write the failing Vercel configuration test**
 
@@ -450,7 +450,6 @@ def test_root_vercel_config_declares_frontend_and_backend_services() -> None:
         "root": "backend/",
         "framework": "fastapi",
         "entrypoint": "main:app",
-        "maxDuration": 300,
     }
     assert config["fluid"] is True
     assert config["rewrites"] == [
@@ -507,8 +506,7 @@ Create `vercel.json`:
     "backend": {
       "root": "backend/",
       "framework": "fastapi",
-      "entrypoint": "main:app",
-      "maxDuration": 300
+      "entrypoint": "main:app"
     }
   },
   "rewrites": [
