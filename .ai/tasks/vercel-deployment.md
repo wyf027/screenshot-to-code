@@ -8,8 +8,8 @@ keys outside the browser.
 
 ## Current State
 
-- Status: backend mount, frontend URL, and Vercel topology implemented; local
-  integrated verification in progress.
+- Status: implementation locally verified; independent review and GitHub
+  delivery pending.
 - Branch: `feat/vercel-deployment`.
 - Worktree: `.worktrees/vercel-deployment`.
 - Upstream base: `d026163f586dfa8c5c10d28c36edd59a9d3b0e88`.
@@ -36,6 +36,23 @@ keys outside the browser.
   `pillow-heif 0.18.0` required unavailable `libheif` headers. Python 3.11 uses
   the supported wheel and installs successfully.
 
+## Local Integrated Verification
+
+- Backend tests: 288 passed in 33.45 seconds.
+- Backend Pyright: exit 0, 0 errors, 36 existing warnings; no new warning in a
+  changed file.
+- Frontend tests: 49 passed, 6 skipped; 9 suites passed, 1 skipped.
+- Frontend production build: exit 0; 1,331 modules transformed. Existing build
+  warnings remain for Node `DEP0190` and a minified chunk over 500 kB.
+- Changed frontend files lint: exit 0.
+- Full frontend lint baseline: unchanged at 19 errors and 6 warnings, all in
+  pre-existing files.
+- Prefixed FastAPI probe: `/backend/api/capabilities` returned 200 with
+  `screenshot_preview=false`; `/backend/` returned 200.
+- Chromium probe: unavailable and automatically disabled, as designed for the
+  first Vercel deployment.
+- Provider secret-pattern scan: no matches.
+
 ## Boundaries
 
 - Do not implement until the user approves the written spec.
@@ -59,4 +76,5 @@ keys outside the browser.
 
 ## Next Action
 
-Execute Task 1 from the revised implementation plan with a fresh failing test.
+Run independent review, create and merge the GitHub pull request, then import
+the repository into Vercel.

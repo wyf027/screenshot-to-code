@@ -579,7 +579,7 @@ git diff --check
 Expected: the deployment instructions are present, the secret-pattern search
 returns no matches, and the diff is clean.
 
-- [ ] **Step 4: Commit the deployment documentation**
+- [x] **Step 4: Commit the deployment documentation**
 
 ```bash
 git add README.md .ai/tasks/vercel-deployment.md
@@ -597,7 +597,7 @@ git commit -m "docs: add Vercel deployment guide"
 - Consumes: all code and configuration from Tasks 1-4.
 - Produces: repeatable local evidence for backend routing, frontend behavior, build output, types, and known upstream baselines.
 
-- [ ] **Step 1: Run the complete backend suite**
+- [x] **Step 1: Run the complete backend suite**
 
 ```bash
 cd backend
@@ -608,7 +608,7 @@ uvx --from poetry poetry run pyright
 Expected: all tests pass; Pyright has zero errors and no warnings in changed
 files. Record the total warnings separately from the 36-warning baseline.
 
-- [ ] **Step 2: Run the complete frontend suite and build**
+- [x] **Step 2: Run the complete frontend suite and build**
 
 ```bash
 cd frontend
@@ -619,7 +619,7 @@ pnpm exec eslint src/config.ts src/lib/backend-urls.ts src/lib/backend-urls.test
 
 Expected: all tests and the build pass; changed files have zero lint findings.
 
-- [ ] **Step 3: Recheck the upstream full-lint baseline**
+- [x] **Step 3: Recheck the upstream full-lint baseline**
 
 ```bash
 cd frontend
@@ -630,7 +630,7 @@ Expected baseline: nonzero exit with 19 existing errors and 6 existing warnings.
 If the counts or files change, inspect the diff and do not attribute new
 findings to upstream.
 
-- [ ] **Step 4: Smoke-test the prefixed FastAPI service**
+- [x] **Step 4: Smoke-test the prefixed FastAPI service**
 
 Start the backend in a terminal with non-secret runtime variables:
 
@@ -653,7 +653,7 @@ curl --fail --silent --show-error http://127.0.0.1:7001/backend/
 Expected: both requests return successfully. Stop the Uvicorn process before
 continuing.
 
-- [ ] **Step 5: Record verification evidence in the task card**
+- [x] **Step 5: Record verification evidence in the task card**
 
 Add exact test counts, build exit status, Pyright totals, lint baseline totals,
 and prefixed API probe results to `.ai/tasks/vercel-deployment.md`.
