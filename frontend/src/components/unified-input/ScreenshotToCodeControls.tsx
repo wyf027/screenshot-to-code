@@ -45,7 +45,7 @@ function AssetToggle({
         <LuImage className="h-3.5 w-3.5" />
       </span>
       <span className="text-sm font-medium text-gray-600 dark:text-zinc-300">
-        Extract image assets from original
+        从原图提取素材
       </span>
       <span className="ml-auto flex items-center">
         <Checkbox
@@ -70,8 +70,8 @@ export default function ScreenshotToCodeControls({
   isAssetExtractionEnabled,
   onAssetExtractionChange,
   onGenerate,
-  actionLabel = "Generate Code",
-  loadingActionLabel = "Generating…",
+  actionLabel = "生成代码",
+  loadingActionLabel = "正在生成…",
   isActionLoading = false,
   actionTestId = "upload-generate",
 }: Props) {
@@ -94,7 +94,7 @@ export default function ScreenshotToCodeControls({
             <LuLayers className="h-3.5 w-3.5" />
           </span>
           <span className="text-sm font-medium text-gray-600 dark:text-zinc-300">
-            Stack
+            输出技术
           </span>
           <div className="ml-auto">
             <OutputSettingsSection
@@ -120,11 +120,11 @@ export default function ScreenshotToCodeControls({
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-600 dark:text-zinc-300">
-                  {hasInstructions ? "Additional instructions" : "Add instructions"}
+                  {hasInstructions ? "生成要求" : "添加生成要求"}
                 </span>
                 {!hasInstructions && (
                   <span className="text-[11px] text-gray-400 dark:text-zinc-500">
-                    Optional
+                    可选
                   </span>
                 )}
               </span>
@@ -148,10 +148,10 @@ export default function ScreenshotToCodeControls({
                 value={textPrompt}
                 onChange={(event) => onTextPromptChange(event.target.value)}
                 onKeyDown={onTextInputKeyDown}
-                placeholder="Describe anything you want changed or emphasized…"
+                placeholder="描述需要调整或重点还原的内容…"
                 className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
                 rows={2}
-                aria-label="Instructions for generated code"
+                aria-label="生成代码要求"
               />
             </div>
           )}

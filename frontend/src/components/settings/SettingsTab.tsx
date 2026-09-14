@@ -19,6 +19,12 @@ interface Props {
   setAppTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
 }
 
+const APP_THEME_LABELS: Record<AppTheme, string> = {
+  [AppTheme.SYSTEM]: "跟随系统",
+  [AppTheme.LIGHT]: "浅色",
+  [AppTheme.DARK]: "深色",
+};
+
 function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
   // null = not yet known (loading / unreachable); otherwise the backend's answer.
   const [screenshotPreviewAvailable, setScreenshotPreviewAvailable] = useState<
@@ -55,7 +61,7 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Settings
+            设置
           </h1>
         </div>
 
@@ -64,17 +70,17 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
           <div className="rounded-lg border border-gray-200 bg-white dark:border-zinc-700 dark:bg-zinc-800/60">
             <div className="border-b border-gray-100 px-4 py-3 dark:border-zinc-700">
               <h2 className="text-sm font-medium text-gray-900 dark:text-white">
-                Theme
+                主题
               </h2>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-zinc-700">
               <div className="flex items-center justify-between px-4 py-3">
                 <div>
                   <span className="text-sm text-gray-700 dark:text-zinc-300">
-                    App Theme
+                    应用主题
                   </span>
                   <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
-                    System default, with optional light/dark override
+                    默认跟随系统，也可手动选择浅色或深色
                   </p>
                 </div>
                 <Select
@@ -83,22 +89,22 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
                   onValueChange={(value) => setAppTheme(value as AppTheme)}
                 >
                   <SelectTrigger className="w-[140px]">
-                    {capitalize(appTheme)}
+                    {APP_THEME_LABELS[appTheme]}
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={AppTheme.SYSTEM}>System</SelectItem>
-                    <SelectItem value={AppTheme.LIGHT}>Light</SelectItem>
-                    <SelectItem value={AppTheme.DARK}>Dark</SelectItem>
+                    <SelectItem value={AppTheme.SYSTEM}>跟随系统</SelectItem>
+                    <SelectItem value={AppTheme.LIGHT}>浅色</SelectItem>
+                    <SelectItem value={AppTheme.DARK}>深色</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
                 <div>
                   <span className="text-sm text-gray-700 dark:text-zinc-300">
-                    Code Editor Theme
+                    代码编辑器主题
                   </span>
                   <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
-                    Requires page refresh to update
+                    刷新页面后生效
                   </p>
                 </div>
                 <Select
@@ -130,17 +136,16 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
           <div className="rounded-lg border border-gray-200 bg-white dark:border-zinc-700 dark:bg-zinc-800/60">
             <div className="border-b border-gray-100 px-4 py-3 dark:border-zinc-700">
               <h2 className="text-sm font-medium text-gray-900 dark:text-white">
-                API Keys
+                模型 Key
               </h2>
             </div>
             <div className="space-y-4 p-4">
               <div>
                 <p className="text-sm font-medium text-gray-700 dark:text-zinc-300">
-                  OpenAI API key
+                  OpenAI API Key
                 </p>
                 <p className="mt-1 text-xs text-gray-500 dark:text-zinc-400">
-                  Only stored in your browser. Never stored on servers. Overrides
-                  your .env config.
+                  只在当前页面中使用，不会保存到浏览器或服务器；刷新页面后需要重新填写。
                 </p>
                 <Input
                   id="openai-api-key"
@@ -159,11 +164,10 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
               {!IS_RUNNING_ON_CLOUD && (
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-zinc-300">
-                    OpenAI Base URL (optional)
+                    OpenAI Base URL（可选）
                   </p>
                   <p className="mt-1 text-xs text-gray-500 dark:text-zinc-400">
-                    Replace with a proxy URL if you don't want to use the
-                    default.
+                    本地运行时可指定兼容 OpenAI 的服务地址。
                   </p>
                   <Input
                     id="openai-base-url"
@@ -182,11 +186,10 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
 
               <div>
                 <p className="text-sm font-medium text-gray-700 dark:text-zinc-300">
-                  Anthropic API key
+                  Anthropic API Key
                 </p>
                 <p className="mt-1 text-xs text-gray-500 dark:text-zinc-400">
-                  Only stored in your browser. Never stored on servers. Overrides
-                  your .env config.
+                  只在当前页面中使用，不会保存到浏览器或服务器；刷新页面后需要重新填写。
                 </p>
                 <Input
                   id="anthropic-api-key"
@@ -204,11 +207,10 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
 
               <div>
                 <p className="text-sm font-medium text-gray-700 dark:text-zinc-300">
-                  Gemini API key
+                  Gemini API Key
                 </p>
                 <p className="mt-1 text-xs text-gray-500 dark:text-zinc-400">
-                  Only stored in your browser. Never stored on servers. Overrides
-                  your .env config.
+                  只在当前页面中使用，不会保存到浏览器或服务器；刷新页面后需要重新填写。
                 </p>
                 <Input
                   id="gemini-api-key"
@@ -227,11 +229,10 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
               {!IS_RUNNING_ON_CLOUD && (
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-zinc-300">
-                    Replicate API key
+                    Replicate API Key
                   </p>
                   <p className="mt-1 text-xs text-gray-500 dark:text-zinc-400">
-                    Only stored in your browser. Never stored on servers. Overrides
-                    your .env config for image generation and editing.
+                    只在当前页面中使用，不会保存到浏览器或服务器。
                   </p>
                   <Input
                     id="replicate-api-key"
@@ -254,17 +255,17 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
           <div className="rounded-lg border border-gray-200 bg-white dark:border-zinc-700 dark:bg-zinc-800/60">
             <div className="border-b border-gray-100 px-4 py-3 dark:border-zinc-700">
               <h2 className="text-sm font-medium text-gray-900 dark:text-white">
-                Image Generation
+                占位图生成
               </h2>
             </div>
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-700 dark:text-zinc-300">
-                    Placeholder Images
+                    生成占位图片
                   </p>
                   <p className="mt-1 text-xs text-gray-500 dark:text-zinc-400">
-                    More fun with it but if you want to save money, turn it off.
+                    关闭后可减少模型调用费用。
                   </p>
                 </div>
                 <Switch
@@ -285,7 +286,7 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
           <div className="rounded-lg border border-gray-200 bg-white dark:border-zinc-700 dark:bg-zinc-800/60">
             <div className="border-b border-gray-100 px-4 py-3 dark:border-zinc-700">
               <h2 className="text-sm font-medium text-gray-900 dark:text-white">
-                Screenshot Preview
+                自动预览验证
               </h2>
             </div>
             <div className="p-4">
@@ -294,16 +295,14 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
                   <BsExclamationTriangleFill className="mt-0.5 shrink-0 text-amber-500" />
                   <div>
                     <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                      Screenshot preview is unavailable
+                      当前无法自动预览
                     </p>
                     <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                      Headless Chromium isn't installed on the backend, so the
-                      agent can't render and visually verify its own output.
-                      Install it with{" "}
+                      后端未安装 Chromium，因此无法自动渲染并检查生成结果。可运行{" "}
                       <code className="rounded bg-amber-100 px-1 py-0.5 font-mono dark:bg-amber-900/40">
                         playwright install chromium
                       </code>{" "}
-                      and restart the backend.
+                      后重启后端。
                     </p>
                   </div>
                 </div>
@@ -312,17 +311,16 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
                   <BsCheckCircleFill className="mt-0.5 shrink-0 text-emerald-500" />
                   <div>
                     <p className="text-sm text-gray-700 dark:text-zinc-300">
-                      Available
+                      可用
                     </p>
                     <p className="mt-1 text-xs text-gray-500 dark:text-zinc-400">
-                      The agent renders your generated page in a headless browser
-                      to visually check its work and fix layout issues.
+                      系统会自动渲染生成页面并检查布局。
                     </p>
                   </div>
                 </div>
               ) : (
                 <p className="text-xs text-gray-500 dark:text-zinc-400">
-                  Checking backend capabilities…
+                  正在检查后端能力…
                 </p>
               )}
             </div>
@@ -332,19 +330,19 @@ function SettingsTab({ settings, setSettings, appTheme, setAppTheme }: Props) {
           <div className="rounded-lg border border-gray-200 bg-white dark:border-zinc-700 dark:bg-zinc-800/60">
             <div className="border-b border-gray-100 px-4 py-3 dark:border-zinc-700">
               <h2 className="text-sm font-medium text-gray-900 dark:text-white">
-                Screenshot by URL
+                网页截图
               </h2>
             </div>
             <div className="p-4">
               <p className="text-xs text-gray-500 dark:text-zinc-400">
-                If you want to use URLs directly instead of taking the screenshot
-                yourself, add a ScreenshotOne API key.{" "}
+                如需直接输入网址，请填写 ScreenshotOne API Key。该 Key
+                同样只在当前页面中使用。{" "}
                 <a
-                  href="https://screenshotone.com?via=screenshot-to-code"
+                  href="https://screenshotone.com/"
                   className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
                   target="_blank"
                 >
-                  Get 100 screenshots/mo for free.
+                  打开 ScreenshotOne
                 </a>
               </p>
               <Input

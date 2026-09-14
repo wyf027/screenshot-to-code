@@ -5,7 +5,6 @@ import { NEW_DESIGN_SYSTEM_CONTENT } from "./lib/design-systems";
 import { IS_RUNNING_ON_CLOUD } from "./config";
 import { OnboardingNote } from "./components/messages/OnboardingNote";
 import { usePersistedState } from "./hooks/usePersistedState";
-import TermsOfServiceDialog from "./components/TermsOfServiceDialog";
 import { USER_CLOSE_WEB_SOCKET_CODE } from "./constants";
 import toast from "react-hot-toast";
 import { nanoid } from "nanoid";
@@ -86,28 +85,28 @@ function App() {
   } = useAppStore();
 
   // Settings
-  const [settings, setSettings] = usePersistedState<Settings>(
-    {
-      openAiApiKey: null,
-      openAiBaseURL: null,
-      replicateApiKey: null,
-      anthropicApiKey: null,
-      geminiApiKey: null,
-      screenshotOneApiKey: null,
-      isImageGenerationEnabled: true,
-      editorTheme: EditorTheme.COBALT,
-      generatedCodeConfig: Stack.HTML_TAILWIND,
-      codeGenerationModel: CodeGenerationModel.GEMINI_3_FLASH_PREVIEW_MINIMAL,
-      selectedDesignSystemId: null,
-      // Only relevant for hosted version
-      isTermOfServiceAccepted: false,
-    },
-    "setting"
-  );
+  const [settings, setSettings] = useState<Settings>({
+    openAiApiKey: null,
+    openAiBaseURL: null,
+    replicateApiKey: null,
+    anthropicApiKey: null,
+    geminiApiKey: null,
+    screenshotOneApiKey: null,
+    isImageGenerationEnabled: true,
+    editorTheme: EditorTheme.COBALT,
+    generatedCodeConfig: Stack.HTML_TAILWIND,
+    codeGenerationModel: CodeGenerationModel.GEMINI_3_FLASH_PREVIEW_MINIMAL,
+    selectedDesignSystemId: null,
+    isTermOfServiceAccepted: true,
+  });
   const [appTheme, setAppTheme] = usePersistedState<AppTheme>(
     AppTheme.SYSTEM,
     "app-theme"
   );
+
+  useEffect(() => {
+    window.localStorage.removeItem("setting");
+  }, []);
 
   const wsRef = useRef<WebSocket>(null);
   const lastThinkingEventIdRef = useRef<Record<number, string>>({});
@@ -547,7 +546,7 @@ function App() {
                 commit.hash,
                 variantIndex,
                 "error",
-                errorMessage || "Generation failed. Please retry."
+                errorMessage || "未生成可预览代码，请调整要求后重试。"
               );
             }
           });
@@ -738,13 +737,6 @@ function App() {
     );
   }
 
-  const handleTermDialogOpenChange = (open: boolean) => {
-    setSettings((s) => ({
-      ...s,
-      isTermOfServiceAccepted: !open,
-    }));
-  };
-
   function setStack(stack: Stack) {
     setSettings((prev) => ({
       ...prev,
@@ -789,13 +781,6 @@ function App() {
           : "min-h-screen"
       }`}
     >
-      {IS_RUNNING_ON_CLOUD && (
-        <TermsOfServiceDialog
-          open={!settings.isTermOfServiceAccepted}
-          onOpenChange={handleTermDialogOpenChange}
-        />
-      )}
-
       {/* Icon strip - always visible */}
       <div
         className="sticky top-0 z-50 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-16 lg:flex-col"
@@ -848,7 +833,7 @@ function App() {
                   : "text-gray-500 dark:text-zinc-400"
               }`}
             >
-              Preview
+              预览
             </button>
             <button
               onClick={() => setMobilePane("chat")}
@@ -858,7 +843,7 @@ function App() {
                   : "text-gray-500 dark:text-zinc-400"
               }`}
             >
-              Chat
+              调整
             </button>
           </div>
         </div>
@@ -875,13 +860,13 @@ function App() {
               <div className="flex-1 overflow-y-auto sidebar-scrollbar-stable px-4">
                 <div className="mt-3">
                   <div className="flex items-center justify-between mb-3 px-1">
-                    <h2 className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Versions</h2>
+                    <h2 className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">版本</h2>
                     <button
                       onClick={() => setIsHistoryOpen(false)}
                       className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                     >
                       <LuChevronLeft className="w-3.5 h-3.5" />
-                      Back to editor
+                      返回编辑
                     </button>
                   </div>
                   <HistoryDisplay />
@@ -889,7 +874,10 @@ function App() {
               </div>
             ) : (
               <>
-                {IS_RUNNING_ON_CLOUD && !settings.openAiApiKey && (
+                {IS_RUNNING_ON_CLOUD &&
+                  !settings.openAiApiKey &&
+                  !settings.anthropicApiKey &&
+                  !settings.geminiApiKey && (
                   <div className="px-6 mt-4">
                     <OnboardingNote />
                   </div>

@@ -130,19 +130,19 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
 
       if (incomingHasVideo && (acceptedFiles.length > 1 || hasExistingImages)) {
         toast.error(
-          `Upload either one video or up to ${MAX_FILES} screenshots (not both).`
+          "请上传 1 个视频，或最多 5 张截图，不能混合上传。"
         );
         return;
       }
 
       if (uploadedInputMode === "video" && files.length > 0) {
-        toast.error("Remove the video to add images.");
+        toast.error("请先移除视频，再添加截图。");
         return;
       }
 
       if (!incomingHasVideo && files.length >= MAX_FILES) {
         toast.error(
-          `You’ve reached the limit of ${MAX_FILES} screenshots. Remove one to add another.`
+          "最多可上传 5 张截图。"
         );
         return;
       }
@@ -151,9 +151,7 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
       if (!incomingHasVideo && files.length + acceptedFiles.length > MAX_FILES) {
         const remainingSlots = MAX_FILES - files.length;
         toast.error(
-          `Only ${remainingSlots} more screenshot${
-            remainingSlots === 1 ? "" : "s"
-          } will be added to stay within the ${MAX_FILES}-screenshot limit.`
+          `仅添加前 ${remainingSlots} 张截图，最多可上传 ${MAX_FILES} 张。`
         );
         filesToAdd = acceptedFiles.slice(0, remainingSlots);
       }
@@ -186,8 +184,8 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
         setTimeout(() => textInputRef.current?.focus(), 100);
       } catch (error) {
         newFiles.forEach((file) => URL.revokeObjectURL(file.preview));
-        toast.error("Error reading files.");
-        console.error("Error reading files:", error);
+        toast.error("读取文件失败。");
+        console.error("读取文件失败", error);
       }
     },
     [files, uploadedInputMode]
@@ -217,22 +215,22 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
     onDropRejected: (rejectedFiles) => {
       const firstError = rejectedFiles[0]?.errors?.[0];
       if (!firstError) {
-        toast.error("Some files were rejected.");
+        toast.error("部分文件无法上传。");
         return;
       }
 
       if (firstError.code === "file-too-large") {
-        toast.error("One or more files exceed the 20MB limit.");
+        toast.error("文件不能超过 20 MB。");
         return;
       }
 
       if (firstError.code === "file-invalid-type") {
-        toast.error("Unsupported file type. Use PNG, JPG, MP4, MOV, or WebM.");
+        toast.error("不支持该文件类型，请使用 PNG、JPG、MP4、MOV 或 WebM。");
         return;
       }
 
       if (firstError.code === "too-many-files") {
-        toast.error(`You can upload up to ${MAX_FILES} screenshots.`);
+        toast.error("最多可上传 5 张截图。");
         return;
       }
 
@@ -320,18 +318,18 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
             </div>
             <div className="text-center">
               <p className="text-gray-700 dark:text-zinc-200 font-medium">
-                Drop up to {MAX_FILES} screenshots or a single video
+                拖入最多 {MAX_FILES} 张截图，或单个视频
               </p>
             </div>
             <p className="text-xs text-gray-400 dark:text-zinc-500 mt-2">
-              Supports PNG, JPG, MP4, MOV, WebM (max 20MB each, 30s video)
+              支持 PNG、JPG、MP4、MOV、WebM（单个文件最大 20 MB，视频最长 30 秒）
             </p>
             <button
               type="button"
               onClick={open}
               className="text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 underline"
             >
-              Browse files
+              选择文件
             </button>
           </div>
         </div>
@@ -350,7 +348,7 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
                 <button
                   onClick={handleClear}
                   className="absolute top-2 right-2 bg-white dark:bg-zinc-800 rounded-full p-1.5 shadow-md hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
-                  aria-label="Remove video"
+                  aria-label="移除视频"
                 >
                   <Cross2Icon className="h-4 w-4 text-gray-600 dark:text-zinc-300" />
                 </button>
@@ -365,26 +363,26 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
               >
                 <input {...getInputProps()} />
                 <div className="flex items-center justify-between text-xs uppercase tracking-wide text-gray-400 dark:text-zinc-500">
-                  <span>{`Uploaded Screenshots (${files.length}/${MAX_FILES})`}</span>
+                  <span>{`已上传截图（${files.length}/${MAX_FILES}）`}</span>
                   <button
                     type="button"
                     onClick={handleClear}
                     className="text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200"
                   >
-                    Clear all
+                    全部清除
                   </button>
                 </div>
                 <div className="mt-1 text-[11px] text-gray-400 dark:text-zinc-500">
                   {isAtLimit
-                    ? "Limit reached"
-                    : `${remainingSlots} remaining`}
+                    ? "已达到上限"
+                    : `还可添加 ${remainingSlots} 张`}
                 </div>
                 <div className="mt-3 rounded-md border border-gray-100 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2 overflow-hidden">
                   <div className="flex h-[280px] w-full items-center justify-center overflow-hidden rounded bg-white dark:bg-zinc-900">
                     {files[selectedIndex] && (
                       <img
                         src={files[selectedIndex].preview}
-                        alt={`Uploaded screenshot ${selectedIndex + 1}`}
+                        alt={`已上传截图 ${selectedIndex + 1}`}
                         className="h-auto w-auto max-h-full max-w-full object-contain"
                       />
                     )}
@@ -401,11 +399,11 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
                             ? "border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800"
                             : "border-gray-200 dark:border-zinc-700"
                         }`}
-                        aria-label={`Preview screenshot ${index + 1}`}
+                        aria-label={`预览截图 ${index + 1}`}
                       >
                         <img
                           src={file.preview}
-                          alt={`Thumbnail ${index + 1}`}
+                          alt={`截图缩略图 ${index + 1}`}
                           className="h-full w-full object-cover"
                         />
                       </button>
@@ -413,7 +411,7 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
                         type="button"
                         onClick={() => handleRemoveImage(index)}
                         className="absolute -top-1 -right-1 h-4 w-4 bg-gray-800 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label={`Remove screenshot ${index + 1}`}
+                        aria-label={`移除截图 ${index + 1}`}
                       >
                         <Cross2Icon className="h-2 w-2" />
                       </button>
@@ -424,7 +422,7 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
                     onClick={() => {
                       if (isAtLimit) {
                         toast.error(
-                          `You’ve reached the limit of ${MAX_FILES} screenshots. Remove one to add another.`
+                          "最多可上传 5 张截图。"
                         );
                         return;
                       }
@@ -436,17 +434,17 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
                         ? "border-gray-200 dark:border-zinc-700 text-gray-300 dark:text-zinc-600 cursor-not-allowed"
                         : "border-gray-300 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:border-gray-400 dark:hover:border-zinc-500"
                     }`}
-                    aria-label="Add more screenshots"
+                    aria-label="添加更多截图"
                   >
                     <ImageIcon className="h-5 w-5" />
                   </button>
                 </div>
                 <div className="mt-2 text-xs text-gray-400 dark:text-zinc-500">
-                  Drag and drop to add more screenshots
+                  可继续拖放添加截图
                 </div>
                 {isDragActive && (
                   <div className="absolute inset-0 bg-blue-50/80 dark:bg-blue-950/80 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg flex items-center justify-center pointer-events-none">
-                    <p className="text-blue-600 dark:text-blue-400 font-medium">Drop to add</p>
+                    <p className="text-blue-600 dark:text-blue-400 font-medium">松开即可添加</p>
                   </div>
                 )}
               </div>
@@ -474,7 +472,7 @@ function UploadTab({ doCreate, stack, setStack, designSystem }: Props) {
           {screenRecorderState === ScreenRecorderState.INITIAL && (
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-zinc-400">
               <div className="h-px w-12 bg-gray-300 dark:bg-zinc-600" />
-              <span>or</span>
+              <span>或者</span>
               <div className="h-px w-12 bg-gray-300 dark:bg-zinc-600" />
             </div>
           )}
