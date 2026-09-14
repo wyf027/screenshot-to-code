@@ -1,5 +1,5 @@
 export const URLS = {
   "intro-to-video":
-    "https://github.com/abi/screenshot-to-code/wiki/Screen-Recording-to-Code",
-  tips: "https://git.new/s5ywP0e",
+    "https://github.com/wyf027/screenshot-to-code/wiki/Screen-Recording-to-Code",
+  tips: "https://github.com/wyf027/screenshot-to-code",
 };

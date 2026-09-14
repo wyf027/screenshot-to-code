@@ -1,25 +1,10 @@
 export function OnboardingNote() {
   return (
-    <div className="flex flex-col space-y-4 bg-green-700 p-2 rounded text-stone-200 text-sm">
+    <div className="flex flex-col space-y-2 rounded bg-violet-700 p-3 text-sm text-white">
+      <strong>开始前请先配置模型 Key</strong>
       <span>
-        To use Screenshot to Code,{" "}
-        <a
-          className="inline underline hover:opacity-70"
-          href="https://buy.stripe.com/8wM6sre70gBW1nqaEE"
-          target="_blank"
-        >
-          buy some credits (100 generations for $36)
-        </a>{" "}
-        or use your own OpenAI API key with GPT4 vision access.{" "}
-        <a
-          href="https://github.com/abi/screenshot-to-code/blob/main/Troubleshooting.md"
-          className="inline underline hover:opacity-70"
-          target="_blank"
-        >
-          Follow these instructions to get yourself a key.
-        </a>{" "}
-        and paste it in the Settings dialog (gear icon above). Your key is only
-        stored in your browser. Never stored on our servers.
+        点击上方设置按钮，填写 OpenAI、Gemini 或 Anthropic Key。Key
+        只在当前页面中使用，刷新或关闭页面后即清除。
       </span>
     </div>
   );

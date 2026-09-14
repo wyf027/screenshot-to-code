@@ -1,6 +1,10 @@
-# screenshot-to-code
+# WYF Screenshot Studio
 
-Convert screenshots, mockups, Figma designs, and screen recordings into clean, functional code using AI. The easiest way to try this is using <a href="https://screenshottocode.com/?utm_source=github&utm_medium=readme&utm_campaign=oss_readme&utm_content=top_cta" target="_blank" rel="noopener noreferrer">the official, hosted product at screenshottocode.com →</a>
+把截图、设计稿和屏幕录制转换为可预览、可复制的前端代码。在线体验：
+[screenshot-to-code-blue.vercel.app](https://screenshot-to-code-blue.vercel.app/)。
+
+本项目基于 [abi/screenshot-to-code](https://github.com/abi/screenshot-to-code)
+二次开发，并继续遵循 MIT License。
 
 
 https://github.com/user-attachments/assets/ec08a5e6-9606-41c5-b03a-1bf47dfeba75
@@ -28,12 +32,9 @@ Screenshot to Code also supports taking a screen recording of a website in actio
 
 ![google in app quick 3](https://github.com/abi/screenshot-to-code/assets/23818/8758ffa4-9483-4b9b-bb66-abd6d1594c33)
 
-## 🛠 Getting Started
+## 🛠 开始使用
 
-Choose the path that fits what you want to do:
-
-- **Run locally:** best if you want to customize, self-host, or contribute.
-- **Use the hosted app:** the fastest way to try Screenshot to Code with no local setup. <a href="https://screenshottocode.com/?utm_source=github&utm_medium=readme&utm_campaign=oss_readme&utm_content=getting_started_cta" target="_blank" rel="noopener noreferrer">Open the hosted app →</a>
+可以直接打开在线版本，也可以在本地运行并继续定制。
 
 Running locally requires API keys and a backend/frontend setup. The app has a React/Vite frontend and a FastAPI backend.
 
@@ -76,7 +77,7 @@ poetry env activate
 poetry run uvicorn main:app --reload --port 7001
 ```
 
-You can also set up OpenAI, Anthropic, and Gemini keys using the settings dialog in the frontend (click the gear icon after loading the app). Replicate must be configured in `backend/.env` as `REPLICATE_API_KEY`. The Settings dialog also shows whether **screenshot preview** is available on your backend.
+在线版本可在设置中填写 OpenAI、Anthropic 或 Gemini Key。Key 只保存在当前页面内存中，刷新或关闭页面后即清除。Replicate 仅支持通过本地 `backend/.env` 配置。设置页也会显示后端是否支持自动截图预览。
 
 > **Screenshot preview** (optional) lets the agent render its own generated page in a headless browser and visually check its work. It's enabled automatically once Chromium is installed (the `playwright install chromium` step above, or automatically in the Docker image). If Chromium is missing, the app just skips the tool — the Settings dialog shows whether it's available.
 
@@ -150,12 +151,12 @@ commands above continue to use the existing unprefixed backend routes.
 
 ## 🙋‍♂️ FAQs
 
-- **I'm running into an error when setting up the backend. How can I fix it?** [Try this](https://github.com/abi/screenshot-to-code/issues/3#issuecomment-1814777959). If that still doesn't work, open an issue.
-- **How do I get an OpenAI API key?** See https://github.com/abi/screenshot-to-code/blob/main/Troubleshooting.md
+- **I'm running into an error when setting up the backend. How can I fix it?** See [Troubleshooting](https://github.com/wyf027/screenshot-to-code/blob/main/Troubleshooting.md).
+- **How do I get an OpenAI API key?** See https://github.com/wyf027/screenshot-to-code/blob/main/Troubleshooting.md
 - **How can I configure an OpenAI proxy?** If you're not able to access the OpenAI API directly, for example because of country restrictions, you can try a VPN or configure the OpenAI base URL to use a proxy. Set `OPENAI_BASE_URL` in `backend/.env` or directly in the UI in the settings dialog. Make sure the URL has `v1` in the path, for example: `https://xxx.xxxxx.xxx/v1`.
 - **How can I update the backend host that my frontend connects to?** Configure `VITE_HTTP_BACKEND_URL` and `VITE_WS_BACKEND_URL` in `frontend/.env.local`. For example, set `VITE_HTTP_BACKEND_URL=http://124.10.20.1:7001`.
 - **Seeing UTF-8 errors when running the backend?** On Windows, open the `.env` file with Notepad++, then go to Encoding and select UTF-8.
-- **How can I provide feedback?** For feedback, feature requests, and bug reports, open an issue or ping me on [Twitter](https://twitter.com/_abi_).
+- **How can I provide feedback?** Open an issue in https://github.com/wyf027/screenshot-to-code/issues.
 
 ## 📚 Examples
 

@@ -6,10 +6,36 @@ import {
 } from "./constants";
 import { FullGenerationSettings } from "./types";
 
-const ERROR_MESSAGE =
-  "Error generating code. Check the Developer Console AND the backend logs for details. Feel free to open a Github issue.";
+const ERROR_MESSAGE = "生成失败，请稍后重试。";
+const CANCEL_MESSAGE = "已取消生成";
 
-const CANCEL_MESSAGE = "Code generation cancelled";
+function toUserError(message = "") {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("no openai") || normalized.includes("no api key")) {
+    return "请先在设置中填写 OpenAI、Gemini 或 Anthropic Key。";
+  }
+  if (normalized.includes("401") || normalized.includes("authentication")) {
+    return "模型 Key 无效，请检查后重试。";
+  }
+  if (normalized.includes("quota") || normalized.includes("credit")) {
+    return "模型额度不足，请检查服务商账户。";
+  }
+  if (normalized.includes("rate limit") || normalized.includes("429")) {
+    return "模型请求过于频繁，请稍后重试。";
+  }
+  if (normalized.includes("timeout") || normalized.includes("timed out")) {
+    return "生成请求超时，请缩小图片或稍后重试。";
+  }
+  return ERROR_MESSAGE;
+}
+
+type ToolEventData = {
+  name?: string;
+  input?: unknown;
+  output?: unknown;
+  ok?: boolean;
+  models?: string[];
+};
 
 type WebSocketResponse = {
   type:
@@ -26,7 +52,7 @@ type WebSocketResponse = {
     | "toolStart"
     | "toolResult";
   value?: string;
-  data?: any;
+  data?: ToolEventData;
   eventId?: string;
   variantIndex: number;
 };
@@ -41,8 +67,16 @@ interface CodeGenerationCallbacks {
   onVariantModels: (models: string[]) => void;
   onThinking: (content: string, variantIndex: number, eventId?: string) => void;
   onAssistant: (content: string, variantIndex: number, eventId?: string) => void;
-  onToolStart: (data: any, variantIndex: number, eventId?: string) => void;
-  onToolResult: (data: any, variantIndex: number, eventId?: string) => void;
+  onToolStart: (
+    data: ToolEventData | undefined,
+    variantIndex: number,
+    eventId?: string
+  ) => void;
+  onToolResult: (
+    data: ToolEventData | undefined,
+    variantIndex: number,
+    eventId?: string
+  ) => void;
   onCancel: (
     reason: "user_cancelled" | "request_failed" | "connection_error",
     errorMessage?: string
@@ -77,7 +111,10 @@ export function generateCode(
     } else if (response.type === "variantComplete") {
       callbacks.onVariantComplete(response.variantIndex);
     } else if (response.type === "variantError") {
-      callbacks.onVariantError(response.variantIndex, response.value || "");
+      callbacks.onVariantError(
+        response.variantIndex,
+        toUserError(response.value)
+      );
     } else if (response.type === "variantCount") {
       callbacks.onVariantCount(parseInt(response.value || "1"));
     } else if (response.type === "variantModels") {
@@ -91,34 +128,34 @@ export function generateCode(
     } else if (response.type === "toolResult") {
       callbacks.onToolResult(response.data, response.variantIndex, response.eventId);
     } else if (response.type === "error") {
-      serverErrorMessage = response.value || ERROR_MESSAGE;
-      console.error("Error generating code", serverErrorMessage);
+      serverErrorMessage = toUserError(response.value);
+      console.error("生成失败");
       toast.error(serverErrorMessage);
     }
   });
 
   ws.addEventListener("close", (event) => {
-    console.log("Connection closed", event.code, event.reason);
+    console.log("Connection closed", event.code);
     if (event.code === USER_CLOSE_WEB_SOCKET_CODE) {
       toast.success(CANCEL_MESSAGE);
       callbacks.onCancel("user_cancelled");
     } else if (event.code === APP_ERROR_WEB_SOCKET_CODE) {
-      console.error("Known server error", event);
+      console.error("Known server error", event.code);
       callbacks.onCancel(
         "request_failed",
-        event.reason || serverErrorMessage || ERROR_MESSAGE
+        serverErrorMessage || toUserError(event.reason)
       );
     } else if (event.code !== 1000) {
-      console.error("Unknown server or connection error", event);
+      console.error("WebSocket connection failed", event.code);
       toast.error(ERROR_MESSAGE);
-      callbacks.onCancel("connection_error", event.reason || ERROR_MESSAGE);
+      callbacks.onCancel("connection_error", toUserError(event.reason));
     } else {
       callbacks.onComplete();
     }
   });
 
-  ws.addEventListener("error", (error) => {
-    console.error("WebSocket error", error);
+  ws.addEventListener("error", () => {
+    console.error("WebSocket connection failed");
     toast.error(ERROR_MESSAGE);
   });
 }

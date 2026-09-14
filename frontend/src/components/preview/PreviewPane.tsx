@@ -99,15 +99,15 @@ function PreviewPane({ settings, onOpenVersions }: Props) {
         <div className="relative flex items-center justify-between px-4 py-2 shrink-0 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
           <div className="flex items-center gap-2">
             <TabsList>
-              <TabsTrigger value="desktop" title="Desktop" data-testid="tab-desktop">
+              <TabsTrigger value="desktop" title="桌面端" data-testid="tab-desktop">
                 <FaDesktop />
               </TabsTrigger>
-              <TabsTrigger value="mobile" title="Mobile" data-testid="tab-mobile">
+              <TabsTrigger value="mobile" title="移动端" data-testid="tab-mobile">
                 <FaMobile />
               </TabsTrigger>
-              <TabsTrigger value="code" title="Code" data-testid="tab-code" className="gap-2">
+              <TabsTrigger value="code" title="代码" data-testid="tab-code" className="gap-2">
                 <FaCode />
-                Code
+                代码
               </TabsTrigger>
             </TabsList>
             {(activeTab === "desktop" || activeTab === "mobile") && (
@@ -149,7 +149,7 @@ function PreviewPane({ settings, onOpenVersions }: Props) {
                   onClick={() => openInNewTab(previewCode)}
                   variant="ghost"
                   size="icon"
-                  title="Open in New Tab"
+                  title="新窗口打开"
                   className="h-8 w-8"
                 >
                   <LuExternalLink />
@@ -165,7 +165,7 @@ function PreviewPane({ settings, onOpenVersions }: Props) {
                 onClick={() => canGoPrev && setHead(sortedCommits[currentVersionIndex - 1].hash)}
                 variant="ghost"
                 size="icon"
-                title="Previous version"
+                title="上一版本"
                 className={`h-6 w-6 rounded-full hover:bg-white dark:hover:bg-zinc-700 ${!canGoPrev ? "opacity-30 cursor-not-allowed" : ""}`}
                 disabled={!canGoPrev}
               >
@@ -174,14 +174,14 @@ function PreviewPane({ settings, onOpenVersions }: Props) {
               <div
                 onClick={onOpenVersions}
                 className="flex items-center justify-center gap-2 px-1 cursor-pointer hover:opacity-70 transition-opacity w-32"
-                title="View all versions"
+                title="查看全部版本"
               >
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 leading-none">
-                  Version {currentVersionIndex + 1}
+                  版本 {currentVersionIndex + 1}
                 </span>
                 {currentVersionIndex === totalVersions - 1 && (
                   <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300 leading-none flex items-center h-4">
-                    Latest
+                    最新
                   </span>
                 )}
               </div>
@@ -189,7 +189,7 @@ function PreviewPane({ settings, onOpenVersions }: Props) {
                 onClick={() => canGoNext && setHead(sortedCommits[currentVersionIndex + 1].hash)}
                 variant="ghost"
                 size="icon"
-                title="Next version"
+                title="下一版本"
                 className={`h-6 w-6 rounded-full hover:bg-white dark:hover:bg-zinc-700 ${!canGoNext ? "opacity-30 cursor-not-allowed" : ""}`}
                 disabled={!canGoNext}
               >
@@ -208,7 +208,7 @@ function PreviewPane({ settings, onOpenVersions }: Props) {
                 onClick={() => downloadCode(previewCode)}
                 variant="ghost"
                 size="icon"
-                title="Download Code"
+                title="下载代码"
                 className="h-9 w-9"
                 data-testid="download-code"
               >
@@ -228,7 +228,7 @@ function PreviewPane({ settings, onOpenVersions }: Props) {
               }}
               variant="ghost"
               size="icon"
-              title="Refresh Preview"
+              title="刷新预览"
               className="h-9 w-9"
             >
               <LuRefreshCw />
