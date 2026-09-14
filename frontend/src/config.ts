@@ -22,6 +22,3 @@ export const WS_BACKEND_URL =
 
 export const HTTP_BACKEND_URL =
   import.meta.env.VITE_HTTP_BACKEND_URL || SAME_ORIGIN_BACKEND.http;
-
-export const PICO_BACKEND_FORM_SECRET =
-  import.meta.env.VITE_PICO_BACKEND_FORM_SECRET || null;
