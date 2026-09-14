@@ -75,7 +75,7 @@ function ScreenRecorder({
       mediaRecorder.start();
       setScreenRecorderState(ScreenRecorderState.RECORDING);
     } catch (error) {
-      toast.error("Could not start screen recording");
+      toast.error("无法开始录屏。");
       throw error;
     }
   };
@@ -99,7 +99,7 @@ function ScreenRecorder({
     if (screenRecordingDataUrl) {
       generateCode([screenRecordingDataUrl], "video");
     } else {
-      toast.error("Screen recording does not exist. Please try again.");
+      toast.error("没有可用的录屏，请重新录制。");
       throw new Error("No screen recording data url");
     }
   };
@@ -107,23 +107,23 @@ function ScreenRecorder({
   return (
     <div className="flex items-center justify-center my-3">
       {screenRecorderState === ScreenRecorderState.INITIAL && (
-        <Button onClick={startScreenRecording}>Record Screen</Button>
+        <Button onClick={startScreenRecording}>录制屏幕</Button>
       )}
 
       {screenRecorderState === ScreenRecorderState.RECORDING && (
         <div className="flex items-center flex-col gap-y-4">
           <div className="flex items-center mr-2 text-xl gap-x-1">
             <span className="block h-10 w-10 bg-red-600 rounded-full mr-1 animate-pulse"></span>
-            <span>Recording...</span>
+            <span>正在录制...</span>
           </div>
-          <Button onClick={stopScreenRecording}>Finish Recording</Button>
+          <Button onClick={stopScreenRecording}>结束录制</Button>
         </div>
       )}
 
       {screenRecorderState === ScreenRecorderState.FINISHED && (
         <div className="flex items-center flex-col gap-y-4 w-full max-w-md">
           <div className="flex items-center mr-2 text-xl gap-x-1">
-            <span>Screen Recording Captured.</span>
+            <span>录屏已完成</span>
           </div>
           {screenRecordingDataUrl && (
             <video
@@ -149,9 +149,9 @@ function ScreenRecorder({
                 setScreenRecorderState(ScreenRecorderState.INITIAL)
               }
             >
-              Re-record
+              重新录制
             </Button>
-            <Button className="flex-1" onClick={kickoffGeneration}>Generate</Button>
+            <Button className="flex-1" onClick={kickoffGeneration}>生成代码</Button>
           </div>
         </div>
       )}
