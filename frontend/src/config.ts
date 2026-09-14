@@ -1,8 +1,6 @@
 import { buildBackendUrls } from "./lib/backend-urls";
 
-// Default to false if set to anything other than "true" or unset
-export const IS_RUNNING_ON_CLOUD =
-  import.meta.env.VITE_IS_DEPLOYED === "true" || false;
+export const IS_RUNNING_ON_CLOUD = import.meta.env.PROD;
 
 // When no explicit backend URLs are provided, default to the same origin the
 // app is served from. Combined with the Vite dev-server proxy, this makes the
