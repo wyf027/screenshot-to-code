@@ -1,0 +1,19 @@
+[Unit]
+Description=Screenshot-to-code public Codex gateway worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/yangfan/codexspace-other/projects/screenshot-to-code/gateway
+ExecStart=/home/yangfan/codex-workspace/.tools/a2a/node/node-v22.23.3-linux-x64/bin/node /home/yangfan/codexspace-other/projects/screenshot-to-code/gateway/worker/main.mjs /home/yangfan/codexspace-other/projects/screenshot-to-code/gateway/runtime/worker-config.json
+Environment=HOME=/home/yangfan
+Environment=CODEX_HOME=/home/yangfan/.codex
+Environment=PATH=/home/yangfan/.local/bin:/home/yangfan/codex-workspace/.tools/a2a/node/node-v22.23.3-linux-x64/bin:/usr/local/bin:/usr/bin
+UMask=0077
+Restart=always
+RestartSec=5
+TimeoutStopSec=15
+
+[Install]
+WantedBy=default.target

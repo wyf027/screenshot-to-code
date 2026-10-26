@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { generateCode } from "./generateCode";
+import { generateCode, GenerationCancelHandle } from "./generateCode";
 import { AppState, AppTheme, EditorTheme, Settings } from "./types";
 import { NEW_DESIGN_SYSTEM_CONTENT } from "./lib/design-systems";
-import { IS_RUNNING_ON_CLOUD } from "./config";
-import { OnboardingNote } from "./components/messages/OnboardingNote";
+import { CODEX_GATEWAY_URL, IS_CODEX_GATEWAY_MODE, IS_RUNNING_ON_CLOUD } from "./config";
+import { OnboardingNote, PublicQuotaNote } from "./components/messages/OnboardingNote";
 import { usePersistedState } from "./hooks/usePersistedState";
 import { USER_CLOSE_WEB_SOCKET_CODE } from "./constants";
 import toast from "react-hot-toast";
@@ -108,7 +108,7 @@ function App() {
     window.localStorage.removeItem("setting");
   }, []);
 
-  const wsRef = useRef<WebSocket>(null);
+  const wsRef = useRef<GenerationCancelHandle>(null);
   const lastThinkingEventIdRef = useRef<Record<number, string>>({});
   const lastAssistantEventIdRef = useRef<Record<number, string>>({});
   const lastToolEventIdRef = useRef<Record<number, string>>({});
@@ -118,6 +118,11 @@ function App() {
   const [mobilePane, setMobilePane] = useState<"preview" | "chat">("preview");
   const [isDesignSystemsModalOpen, setIsDesignSystemsModalOpen] =
     useState(false);
+  const [publicQuota, setPublicQuota] = useState<{
+    used?: number;
+    remaining?: number;
+    online?: boolean;
+  } | null>(null);
   const [designSystemsModalInitialId, setDesignSystemsModalInitialId] =
     useState<string | null>(null);
   const {
@@ -127,6 +132,36 @@ function App() {
     updateDesignSystem,
     deleteDesignSystem,
   } = useDesignSystems();
+
+  useEffect(() => {
+    if (!IS_CODEX_GATEWAY_MODE || !CODEX_GATEWAY_URL) return;
+    let disposed = false;
+    const loadQuota = async () => {
+      try {
+        const sessionKey = "wyf-codex-gateway-session";
+        let token = sessionStorage.getItem(sessionKey);
+        if (!token) {
+          const session = await fetch(`${CODEX_GATEWAY_URL}/api/session`, { method: "POST" });
+          if (!session.ok) return;
+          token = (await session.json()).token;
+          if (!token) return;
+          sessionStorage.setItem(sessionKey, token);
+        }
+        const response = await fetch(`${CODEX_GATEWAY_URL}/api/status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!disposed) setPublicQuota(data.quota ?? null);
+      } catch {
+        // Quota display is informative; generation reports its own errors.
+      }
+    };
+    void loadQuota();
+    return () => {
+      disposed = true;
+    };
+  }, []);
 
   const setSelectedDesignSystemId = useCallback(
     (id: string | null) => {
@@ -337,8 +372,9 @@ function App() {
 
     // Use 4 variants for create, 2 for edits to match backend counts
     // and avoid a flash when the backend sends the actual variant count
-    const initialVariantCount =
-      requestParams.generationType === "create" ? 4 : 2;
+    const initialVariantCount = IS_CODEX_GATEWAY_MODE
+      ? 1
+      : requestParams.generationType === "create" ? 4 : 2;
     const baseCommitObject = {
       variants: Array(initialVariantCount)
         .fill(null)
@@ -423,6 +459,11 @@ function App() {
       },
       onStatusUpdate: (line, variantIndex) =>
         appendExecutionConsole(variantIndex, line),
+      onQuotaUpdate: (quota) => setPublicQuota(quota as {
+        used?: number;
+        remaining?: number;
+        online?: boolean;
+      }),
       onVariantComplete: (variantIndex) => {
         console.log(`Variant ${variantIndex} complete event received`);
         updateVariantStatus(commit.hash, variantIndex, "complete");
@@ -874,7 +915,7 @@ function App() {
               </div>
             ) : (
               <>
-                {IS_RUNNING_ON_CLOUD &&
+                {IS_RUNNING_ON_CLOUD && !IS_CODEX_GATEWAY_MODE &&
                   !settings.openAiApiKey &&
                   !settings.anthropicApiKey &&
                   !settings.geminiApiKey && (
@@ -882,6 +923,8 @@ function App() {
                     <OnboardingNote />
                   </div>
                 )}
+
+                {IS_CODEX_GATEWAY_MODE && <div className="px-6 mt-4"><PublicQuotaNote quota={publicQuota} /></div>}
 
                 {(appState === AppState.CODING ||
                   appState === AppState.CODE_READY) && (

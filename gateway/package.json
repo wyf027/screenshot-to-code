@@ -1,0 +1,7 @@
+{
+  "name": "wyf-codex-gateway",
+  "private": true,
+  "type": "module",
+  "scripts": {"test": "node --test test/*.test.mjs"},
+  "dependencies": {"@netlify/blobs": "11.1.6", "image-size": "2.0.2"}
+}

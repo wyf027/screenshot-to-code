@@ -20,3 +20,9 @@ export const WS_BACKEND_URL =
 
 export const HTTP_BACKEND_URL =
   import.meta.env.VITE_HTTP_BACKEND_URL || SAME_ORIGIN_BACKEND.http;
+
+// Public mode sends a constrained screenshot request to the user's private
+// Codex worker through a queue gateway. An empty value preserves the normal
+// BYOK WebSocket flow for local development and existing deployments.
+export const CODEX_GATEWAY_URL = (import.meta.env.VITE_CODEX_GATEWAY_URL || "").replace(/\/$/, "");
+export const IS_CODEX_GATEWAY_MODE = Boolean(CODEX_GATEWAY_URL);
